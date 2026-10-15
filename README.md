@@ -54,14 +54,10 @@ npm install
 ```
 
 ```bash
-cp .dev.vars.example .dev.vars
+npm run setup
 ```
 
-Edit `.dev.vars` and set `SESSION_SECRET` to a long random string. The Turnstile test secret in it always passes, which is what you want locally.
-
-```bash
-npm run db:migrate:local
-```
+This creates `.dev.vars` (git-ignored) with a random session secret and Cloudflare's always-pass Turnstile test secret, then creates the local database tables.
 
 ```bash
 npm run dev
@@ -160,5 +156,7 @@ migrations/          D1 schema
 public/              Manifest, service worker, icons, robots.txt with Content Signals
 test/                Vitest suites that run inside workerd
 docs/research/       The free-tier research report and notes
-scripts/             Icon generator
+scripts/             Local setup and icon generator
 ```
+
+`src/worker`, `src/client`, `test` and `scripts` each have their own `tsconfig.json`, so the repo root stays short.
