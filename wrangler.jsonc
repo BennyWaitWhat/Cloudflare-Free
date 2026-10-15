@@ -1,0 +1,95 @@
+// Worker configuration for the Cloudflare Free challenge.
+// Every binding below is on Cloudflare's free tier. Resources without an id
+// (D1, KV, R2, Queues) are created automatically by `wrangler deploy`.
+// The Vectorize index must be created once by hand: see README "First deploy".
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cloudflare-free",
+  "main": "./src/worker/index.ts",
+  // Kept at or below the newest date @cloudflare/vitest-pool-workers' runtime supports (2026-08-22).
+  "compatibility_date": "2026-08-20",
+
+  // Free hostnames: <name>.<subdomain>.workers.dev plus per-version preview URLs.
+  "workers_dev": true,
+  "preview_urls": true,
+
+  // Workers Static Assets: the PWA is served for free and never counts against
+  // the 100,000 requests/day Worker budget. Only these paths invoke the Worker.
+  "assets": {
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/img/*", "/.well-known/security.txt"]
+  },
+
+  // Smart Placement: run the Worker near D1 instead of near the visitor.
+  "placement": { "mode": "smart" },
+
+  // Workers Logs, Traces and Issues (free allowances; see docs/research).
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+    "logs": { "enabled": true, "invocation_logs": true },
+    "traces": { "enabled": true },
+    "issues": { "enabled": true }
+  },
+  "upload_source_maps": true,
+
+  "vars": {
+    "SITE_NAME": "Cloudflare Free",
+    // Comma-separated usernames that get the admin role.
+    "ADMIN_USERNAMES": "",
+    // AI Gateway id; leave empty to call Workers AI directly.
+    "AI_GATEWAY_ID": "",
+    // Turnstile site key (public). This default is Cloudflare's always-pass test key.
+    "TURNSTILE_SITE_KEY": "1x00000000000000000000AA",
+    // Web Analytics beacon token (public); empty disables the beacon.
+    "WEB_ANALYTICS_TOKEN": ""
+  },
+
+  "d1_databases": [
+    { "binding": "DB", "database_name": "cloudflare-free", "migrations_dir": "migrations" }
+  ],
+  "kv_namespaces": [{ "binding": "KV" }],
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "cloudflare-free-media" }],
+
+  "durable_objects": {
+    "bindings": [{ "name": "CHAT_ROOM", "class_name": "ChatRoom" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ChatRoom"] }],
+
+  "workflows": [
+    {
+      "binding": "MODERATE_POST",
+      "name": "cloudflare-free-moderate-post",
+      "class_name": "ModeratePostWorkflow",
+      "limits": { "steps": 10 }
+    }
+  ],
+
+  "queues": {
+    "producers": [{ "binding": "JOBS", "queue": "cloudflare-free-jobs" }],
+    "consumers": [
+      {
+        "queue": "cloudflare-free-jobs",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 3,
+        "dead_letter_queue": "cloudflare-free-jobs-dlq"
+      }
+    ]
+  },
+
+  "ai": { "binding": "AI" },
+  "vectorize": [{ "binding": "SEARCH_INDEX", "index_name": "cloudflare-free-search" }],
+  "browser": { "binding": "BROWSER" },
+  "images": { "binding": "IMAGES" },
+  "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "cloudflare_free_events" }],
+  "version_metadata": { "binding": "VERSION" },
+  "ratelimits": [
+    { "name": "WRITE_LIMITER", "namespace_id": "4101", "simple": { "limit": 10, "period": 60 } },
+    { "name": "AI_LIMITER", "namespace_id": "4102", "simple": { "limit": 6, "period": 60 } }
+  ],
+
+  // Cron Triggers: one nightly maintenance run (each run spends one Worker request).
+  "triggers": { "crons": ["17 3 * * *"] }
+}

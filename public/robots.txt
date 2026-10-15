@@ -1,0 +1,6 @@
+# Content Signals Policy (https://contentsignals.org): yes to search and AI answers, no to AI training.
+User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+Disallow: /api/
+Disallow: /admin
