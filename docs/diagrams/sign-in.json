@@ -1,0 +1,277 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Signing in with a passkey",
+    "locale": "en",
+    "output": "app/public/learn/sign-in.html",
+    "quality_profile": "showcase",
+    "viewBox": [1060, 682],
+    "column_fit": "spread"
+  },
+  "participants": [
+    {
+      "id": "device",
+      "type": "external",
+      "label": "Authenticator",
+      "sublabel": "fingerprint, face or PIN"
+    },
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Browser",
+      "sublabel": "Account page"
+    },
+    {
+      "id": "turnstile",
+      "type": "security",
+      "label": "Turnstile",
+      "sublabel": "human check"
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "Worker",
+      "sublabel": "Hono + @simplewebauthn/server"
+    },
+    {
+      "id": "d1",
+      "type": "database",
+      "label": "D1",
+      "sublabel": "users, credentials"
+    }
+  ],
+  "segments": [
+    {
+      "from": 144,
+      "to": 344,
+      "label": "New account"
+    },
+    {
+      "from": 362,
+      "to": 534,
+      "label": "Sign in later"
+    },
+    {
+      "from": 552,
+      "to": 584,
+      "label": "Later requests"
+    }
+  ],
+  "messages": [
+    {
+      "id": "a-options",
+      "from": "browser",
+      "to": "worker",
+      "y": 164,
+      "label": "POST /api/auth/register/options + Turnstile token",
+      "variant": "emphasis"
+    },
+    {
+      "id": "a-siteverify",
+      "from": "worker",
+      "to": "turnstile",
+      "y": 192,
+      "label": "check token (siteverify)",
+      "variant": "security"
+    },
+    {
+      "id": "a-challenge",
+      "from": "worker",
+      "to": "browser",
+      "y": 220,
+      "label": "options + signed challenge cookie",
+      "variant": "return"
+    },
+    {
+      "id": "a-create",
+      "from": "browser",
+      "to": "device",
+      "y": 248,
+      "label": "create a passkey"
+    },
+    {
+      "id": "a-verify",
+      "from": "browser",
+      "to": "worker",
+      "y": 276,
+      "label": "POST /api/auth/register/verify + new passkey",
+      "variant": "emphasis"
+    },
+    {
+      "id": "a-save",
+      "from": "worker",
+      "to": "d1",
+      "y": 304,
+      "label": "save user + public key",
+      "variant": "emphasis"
+    },
+    {
+      "id": "a-session",
+      "from": "worker",
+      "to": "browser",
+      "y": 332,
+      "label": "verified: signed session cookie",
+      "variant": "return"
+    },
+    {
+      "id": "b-options",
+      "from": "browser",
+      "to": "worker",
+      "y": 382,
+      "label": "POST /api/auth/login/options",
+      "variant": "emphasis"
+    },
+    {
+      "id": "b-challenge",
+      "from": "worker",
+      "to": "browser",
+      "y": 410,
+      "label": "options + signed challenge cookie",
+      "variant": "return"
+    },
+    {
+      "id": "b-sign",
+      "from": "browser",
+      "to": "device",
+      "y": 438,
+      "label": "sign the challenge"
+    },
+    {
+      "id": "b-verify",
+      "from": "browser",
+      "to": "worker",
+      "y": 466,
+      "label": "POST /api/auth/login/verify + signature",
+      "variant": "emphasis"
+    },
+    {
+      "id": "b-d1",
+      "from": "worker",
+      "to": "d1",
+      "y": 494,
+      "label": "read key, update counter"
+    },
+    {
+      "id": "b-session",
+      "from": "worker",
+      "to": "browser",
+      "y": 522,
+      "label": "verified: signed session cookie",
+      "variant": "return"
+    },
+    {
+      "id": "c-request",
+      "from": "browser",
+      "to": "worker",
+      "y": 572,
+      "label": "any /api call: cookie checked, no writes"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "turnstile",
+      "from": 186,
+      "to": 198,
+      "type": "security"
+    },
+    {
+      "participant": "browser",
+      "from": 158,
+      "to": 338,
+      "type": "frontend"
+    },
+    {
+      "participant": "browser",
+      "from": 376,
+      "to": 528,
+      "type": "frontend"
+    },
+    {
+      "participant": "browser",
+      "from": 566,
+      "to": 578,
+      "type": "frontend"
+    },
+    {
+      "participant": "device",
+      "from": 242,
+      "to": 254,
+      "type": "external"
+    },
+    {
+      "participant": "device",
+      "from": 432,
+      "to": 444,
+      "type": "external"
+    },
+    {
+      "participant": "worker",
+      "from": 158,
+      "to": 226,
+      "type": "backend"
+    },
+    {
+      "participant": "worker",
+      "from": 270,
+      "to": 338,
+      "type": "backend"
+    },
+    {
+      "participant": "worker",
+      "from": 376,
+      "to": 416,
+      "type": "backend"
+    },
+    {
+      "participant": "worker",
+      "from": 460,
+      "to": 528,
+      "type": "backend"
+    },
+    {
+      "participant": "worker",
+      "from": 566,
+      "to": 578,
+      "type": "backend"
+    },
+    {
+      "participant": "d1",
+      "from": 298,
+      "to": 310,
+      "type": "database"
+    },
+    {
+      "participant": "d1",
+      "from": 488,
+      "to": 500,
+      "type": "database"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Passkeys, no passwords",
+      "items": [
+        "The device keeps the private key; D1 stores only the public key",
+        "Signatures fit the 10 ms CPU limit; password hashing would not"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Cookies, not sessions",
+      "items": [
+        "One-time challenge (5 min) and session (30 days) live in signed cookies",
+        "Each later request reads one D1 row, writes none (5M reads a day free)"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Who gets checked",
+      "items": [
+        "Only sign-up uses Turnstile (free, unlimited challenges)",
+        "Sign-up and sign-in: 10 tries a minute per IP"
+      ]
+    }
+  ]
+}

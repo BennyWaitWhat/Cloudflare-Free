@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Email in and out",
+    "locale": "en",
+    "output": "app/public/learn/email.html",
+    "quality_profile": "showcase"
+  },
+  "stages": [
+    {
+      "label": "Source"
+    },
+    {
+      "label": "Delivery"
+    },
+    {
+      "label": "Worker code"
+    },
+    {
+      "label": "Save or send"
+    },
+    {
+      "label": "Read"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "sender",
+      "type": "external",
+      "label": "Sender",
+      "sublabel": "mails your domain",
+      "stage": 0,
+      "row": 0
+    },
+    {
+      "id": "routing",
+      "type": "cloud",
+      "label": "Email Routing",
+      "sublabel": "needs your domain",
+      "tag": "free",
+      "stage": 1,
+      "row": 0
+    },
+    {
+      "id": "handler",
+      "type": "backend",
+      "label": "email handler",
+      "sublabel": "PostalMime parse",
+      "tag": "handleEmail",
+      "stage": 2,
+      "row": 0
+    },
+    {
+      "id": "inbound-table",
+      "type": "database",
+      "label": "D1",
+      "sublabel": "inbound_emails",
+      "stage": 3,
+      "row": 0
+    },
+    {
+      "id": "admin-inbox",
+      "type": "frontend",
+      "label": "Admin inbox",
+      "sublabel": "/api/admin/inbox",
+      "tag": "admin only",
+      "stage": 4,
+      "row": 0
+    },
+    {
+      "id": "owner-inbox",
+      "type": "external",
+      "label": "Your inbox",
+      "sublabel": "OWNER_EMAIL",
+      "stage": 4,
+      "row": 1
+    },
+    {
+      "id": "contact-form",
+      "type": "frontend",
+      "label": "Contact form",
+      "sublabel": "POST /api/contact",
+      "stage": 0,
+      "row": 2
+    },
+    {
+      "id": "jobs-queue",
+      "type": "messagebus",
+      "label": "Jobs queue",
+      "sublabel": "JOBS binding",
+      "stage": 1,
+      "row": 2
+    },
+    {
+      "id": "consumer",
+      "type": "backend",
+      "label": "Consumer",
+      "sublabel": "handleQueue",
+      "stage": 2,
+      "row": 2
+    },
+    {
+      "id": "send-email",
+      "type": "cloud",
+      "label": "send_email",
+      "sublabel": "needs your domain",
+      "tag": "NOTIFY_EMAIL",
+      "stage": 3,
+      "row": 2
+    }
+  ],
+  "flows": [
+    {
+      "id": "mail-in",
+      "from": "sender",
+      "to": "routing",
+      "label": "mail",
+      "variant": "emphasis"
+    },
+    {
+      "id": "to-worker",
+      "from": "routing",
+      "to": "handler",
+      "label": "raw message",
+      "variant": "emphasis"
+    },
+    {
+      "id": "save-copy",
+      "from": "handler",
+      "to": "inbound-table",
+      "label": "parsed text",
+      "variant": "emphasis"
+    },
+    {
+      "id": "show-inbox",
+      "from": "inbound-table",
+      "to": "admin-inbox",
+      "label": "newest 50",
+      "variant": "emphasis"
+    },
+    {
+      "id": "forward-copy",
+      "from": "handler",
+      "to": "owner-inbox",
+      "label": "forward if OWNER_EMAIL is set",
+      "variant": "default"
+    },
+    {
+      "id": "enqueue",
+      "from": "contact-form",
+      "to": "jobs-queue",
+      "label": "enqueue",
+      "variant": "emphasis"
+    },
+    {
+      "id": "deliver-job",
+      "from": "jobs-queue",
+      "to": "consumer",
+      "label": "job batch",
+      "variant": "emphasis"
+    },
+    {
+      "id": "notify",
+      "from": "consumer",
+      "to": "send-email",
+      "label": "if set up",
+      "variant": "default"
+    },
+    {
+      "id": "send-notice",
+      "from": "send-email",
+      "to": "owner-inbox",
+      "label": "notice email",
+      "variant": "default"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Mail coming in",
+      "items": [
+        "Email Routing hands mail for your address to the Worker's email handler",
+        "PostalMime parses it; the text (first 20,000 characters) is saved in D1 inbound_emails",
+        "If OWNER_EMAIL is set the original is forwarded too; the admin inbox lists the newest 50"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Notices going out",
+      "items": [
+        "A contact-form message waits on a Queue; the consumer saves it in D1, then emails you",
+        "The email only goes out if NOTIFY_EMAIL, OWNER_EMAIL and NOTIFY_FROM all exist",
+        "Failed jobs retry after 30 seconds, up to 3 times (Queues: 10,000 operations a day free)"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Needs your domain",
+      "items": [
+        "Email Routing, Email Workers and send_email only work once your domain is on Cloudflare",
+        "Free: unlimited inbound mail, 200 routing rules, sends to your own address unmetered",
+        "Before then the contact form still saves messages; only the email steps stay off"
+      ]
+    }
+  ]
+}

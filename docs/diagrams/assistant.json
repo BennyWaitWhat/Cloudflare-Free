@@ -1,0 +1,240 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Asking the AI assistant",
+    "locale": "en",
+    "output": "app/public/learn/assistant.html",
+    "quality_profile": "showcase",
+    "viewBox": [1060, 654],
+    "column_fit": "spread"
+  },
+  "participants": [
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Browser",
+      "sublabel": "Lab page"
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "Worker",
+      "sublabel": "/api/ai/chat"
+    },
+    {
+      "id": "limiter",
+      "type": "security",
+      "label": "Rate limiter",
+      "sublabel": "AI_LIMITER"
+    },
+    {
+      "id": "ai",
+      "type": "cloud",
+      "label": "Workers AI",
+      "sublabel": "via AI Gateway if set"
+    },
+    {
+      "id": "vectorize",
+      "type": "database",
+      "label": "Vectorize",
+      "sublabel": "SEARCH_INDEX"
+    },
+    {
+      "id": "d1",
+      "type": "database",
+      "label": "D1",
+      "sublabel": "posts"
+    }
+  ],
+  "segments": [
+    {
+      "from": 144,
+      "to": 204,
+      "label": "Guard"
+    },
+    {
+      "from": 222,
+      "to": 394,
+      "label": "Context"
+    },
+    {
+      "from": 412,
+      "to": 556,
+      "label": "Answer"
+    }
+  ],
+  "messages": [
+    {
+      "id": "q-post",
+      "from": "browser",
+      "to": "worker",
+      "y": 164,
+      "label": "POST /api/ai/chat",
+      "variant": "emphasis"
+    },
+    {
+      "id": "q-limit",
+      "from": "worker",
+      "to": "limiter",
+      "y": 192,
+      "label": "6 a minute per IP",
+      "variant": "security"
+    },
+    {
+      "id": "x-embed",
+      "from": "worker",
+      "to": "ai",
+      "y": 242,
+      "label": "embed the question (bge, 384 numbers)"
+    },
+    {
+      "id": "x-vector",
+      "from": "ai",
+      "to": "worker",
+      "y": 270,
+      "label": "384-number vector",
+      "variant": "return"
+    },
+    {
+      "id": "x-query",
+      "from": "worker",
+      "to": "vectorize",
+      "y": 298,
+      "label": "query the 3 closest posts"
+    },
+    {
+      "id": "x-ids",
+      "from": "vectorize",
+      "to": "worker",
+      "y": 326,
+      "label": "closest post ids",
+      "variant": "return"
+    },
+    {
+      "id": "x-load",
+      "from": "worker",
+      "to": "d1",
+      "y": 354,
+      "label": "load the published posts"
+    },
+    {
+      "id": "x-posts",
+      "from": "d1",
+      "to": "worker",
+      "y": 382,
+      "label": "related posts",
+      "variant": "return"
+    },
+    {
+      "id": "a-chat",
+      "from": "worker",
+      "to": "ai",
+      "y": 432,
+      "label": "GLM-4.7 Flash: prompt + catalog, thinking off",
+      "variant": "emphasis"
+    },
+    {
+      "id": "a-stream",
+      "from": "ai",
+      "to": "worker",
+      "y": 460,
+      "label": "token stream",
+      "variant": "return"
+    },
+    {
+      "id": "a-text",
+      "from": "worker",
+      "to": "browser",
+      "y": 488,
+      "label": "plain-text stream",
+      "variant": "return"
+    },
+    {
+      "id": "a-budget",
+      "from": "ai",
+      "to": "worker",
+      "y": 516,
+      "label": "or out of Neurons (10,000 a day)",
+      "variant": "return"
+    },
+    {
+      "id": "a-429",
+      "from": "worker",
+      "to": "browser",
+      "y": 544,
+      "label": "429: budget used up",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "browser",
+      "from": 158,
+      "to": 550,
+      "type": "frontend"
+    },
+    {
+      "participant": "worker",
+      "from": 158,
+      "to": 550,
+      "type": "backend"
+    },
+    {
+      "participant": "limiter",
+      "from": 186,
+      "to": 198,
+      "type": "security"
+    },
+    {
+      "participant": "ai",
+      "from": 236,
+      "to": 276,
+      "type": "cloud"
+    },
+    {
+      "participant": "ai",
+      "from": 426,
+      "to": 522,
+      "type": "cloud"
+    },
+    {
+      "participant": "vectorize",
+      "from": 292,
+      "to": 332,
+      "type": "database"
+    },
+    {
+      "participant": "d1",
+      "from": 348,
+      "to": 388,
+      "type": "database"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Context before the answer",
+      "items": [
+        "bge-small-en-v1.5 turns the question into 384 numbers; Vectorize finds 3 posts",
+        "D1 loads them; a short catalog summary joins the prompt to save Neurons"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "One shared free budget",
+      "items": [
+        "Workers AI free: 10,000 Neurons a day, shared by every AI feature",
+        "When it runs out the Worker replies 429; it resets at midnight UTC"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Streamed, thinking off",
+      "items": [
+        "GLM-4.7 Flash streams plain text, thinking off, 600 tokens at most",
+        "Set AI_GATEWAY_ID to add AI Gateway caching, limits and logs"
+      ]
+    }
+  ]
+}

@@ -16,6 +16,7 @@
     "icons": "node scripts/make-icons.mjs",
     "demo": "node scripts/seed-demo.mjs",
     "readme:images": "node scripts/make-readme-images.mjs",
+    "diagrams:images": "node scripts/export-diagram-images.mjs",
     "test": "vitest run",
     "db:migrate:local": "wrangler d1 migrations apply cloudflare-free --local",
     "db:migrate:remote": "wrangler d1 migrations apply cloudflare-free --remote"

@@ -12,7 +12,7 @@
 </picture>
 
 <p>
-  <a href="#whats-inside">What's inside</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="#run-it-locally">Run it locally</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="#deploy-it-for-free">Deploy it for free</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="docs/research/free-tier-report.md">The research</a>
+  <a href="#whats-inside">What's inside</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="docs/how-it-works.md">How it works</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="#run-it-locally">Run it locally</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="#deploy-it-for-free">Deploy it for free</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="docs/research/free-tier-report.md">The research</a>
 </p>
 
 <br>
@@ -66,6 +66,13 @@
 
 ## How the free products fit together
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/diagrams/overview-dark.webp">
+  <img src="docs/images/diagrams/overview-light.webp" alt="Architecture diagram: the visitor loads pages from Static Assets and calls the Worker, which uses KV, D1, R2, Durable Objects, Queues, Workflows, Images, Workers AI and Vectorize">
+</picture>
+
+<p align="center"><b><a href="docs/how-it-works.md">How it works</a></b> has a diagram like this for every piece: sign-in, photos, posting, chat, the AI assistant, email and more.</p>
+
 | Feature | Cloudflare products |
 |---|---|
 | Installable web app | Workers Static Assets (unlimited free asset requests), service worker, web manifest |
@@ -116,6 +123,7 @@ Everything runs locally with no Cloudflare account, including D1, KV, R2, Queues
 | `npm test` | Runs the 38 tests inside workerd, with the AI steps mocked |
 | `npm run typecheck` | Type-checks the Worker, the web app, the tests and the scripts |
 | `npm run readme:images` | Retakes the pictures in this README from the running site, in light and dark |
+| `npm run diagrams:images` | Saves each diagram in `public/learn` as light and dark pictures for the guide |
 
 ## Deploy it for free
 
@@ -200,12 +208,14 @@ app/                 The website and its Worker; run npm commands here
 ├─ src/client/       React web app: pages, components, passkey sign-in
 ├─ src/shared/       The catalog of free offerings, and types both sides share
 ├─ migrations/       D1 schema
-├─ public/           Manifest, service worker, icons, robots.txt with Content Signals
+├─ public/           Manifest, service worker, icons, robots.txt; learn/ holds the diagrams
 ├─ test/             Vitest suites that run inside workerd
-└─ scripts/          Local setup, demo data, icons and the README images
+└─ scripts/          Local setup, demo data, icons and the pictures in docs
 docs/
+├─ how-it-works.md   A diagram and a short explanation for each piece
+├─ diagrams/         The diagrams' JSON sources
 ├─ research/         The free-tier research report and notes
-└─ images/           Pictures for this README
+└─ images/           Pictures for the README and the guide
 ```
 
 <br>

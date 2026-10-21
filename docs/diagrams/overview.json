@@ -1,0 +1,225 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "How the pieces fit together",
+    "locale": "en",
+    "output": "app/public/learn/overview.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "visitor",
+      "type": "external",
+      "label": "Visitor",
+      "sublabel": "browser or installed app",
+      "pos": [30, 338],
+      "size": [160, 64]
+    },
+    {
+      "id": "assets",
+      "type": "cloud",
+      "label": "Static Assets",
+      "sublabel": "pages, scripts, icons",
+      "pos": [275, 450],
+      "size": [170, 64]
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "Worker",
+      "sublabel": "Hono API",
+      "pos": [490, 328],
+      "size": [200, 84]
+    },
+    {
+      "id": "kv",
+      "type": "database",
+      "label": "KV",
+      "sublabel": "link-preview cache",
+      "pos": [275, 120],
+      "size": [170, 64]
+    },
+    {
+      "id": "d1",
+      "type": "database",
+      "label": "D1",
+      "sublabel": "posts, members, inbox",
+      "pos": [505, 120],
+      "size": [170, 64]
+    },
+    {
+      "id": "r2",
+      "type": "database",
+      "label": "R2",
+      "sublabel": "photos, screenshots",
+      "pos": [735, 120],
+      "size": [170, 64]
+    },
+    {
+      "id": "chat",
+      "type": "backend",
+      "label": "Durable Objects",
+      "sublabel": "one per chat room",
+      "pos": [275, 600],
+      "size": [170, 64]
+    },
+    {
+      "id": "queue",
+      "type": "messagebus",
+      "label": "Queues",
+      "sublabel": "contact messages",
+      "pos": [505, 600],
+      "size": [170, 64]
+    },
+    {
+      "id": "workflow",
+      "type": "backend",
+      "label": "Workflows",
+      "sublabel": "post moderation",
+      "pos": [735, 600],
+      "size": [170, 64]
+    },
+    {
+      "id": "images",
+      "type": "cloud",
+      "label": "Images",
+      "sublabel": "resize photos",
+      "pos": [970, 200],
+      "size": [170, 64]
+    },
+    {
+      "id": "ai",
+      "type": "cloud",
+      "label": "Workers AI",
+      "sublabel": "chat, safety, vision",
+      "pos": [970, 338],
+      "size": [170, 64]
+    },
+    {
+      "id": "vectorize",
+      "type": "database",
+      "label": "Vectorize",
+      "sublabel": "meaning search",
+      "pos": [970, 476],
+      "size": [170, 64]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Cloudflare free plan",
+      "wraps": [
+        "assets",
+        "worker",
+        "kv",
+        "d1",
+        "r2",
+        "chat",
+        "queue",
+        "workflow",
+        "images",
+        "ai",
+        "vectorize"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "api-requests",
+      "from": "visitor",
+      "to": "worker",
+      "label": "/api, /img",
+      "variant": "emphasis"
+    },
+    {
+      "id": "static-files",
+      "from": "visitor",
+      "to": "assets",
+      "label": "pages",
+      "variant": "dashed"
+    },
+    {
+      "id": "preview-cache",
+      "from": "worker",
+      "to": "kv",
+      "label": "cache"
+    },
+    {
+      "id": "sql",
+      "from": "worker",
+      "to": "d1",
+      "label": "SQL"
+    },
+    {
+      "id": "photo-objects",
+      "from": "worker",
+      "to": "r2",
+      "label": "photos"
+    },
+    {
+      "id": "websockets",
+      "from": "worker",
+      "to": "chat",
+      "label": "WebSocket"
+    },
+    {
+      "id": "enqueue",
+      "from": "worker",
+      "to": "queue",
+      "label": "enqueue",
+      "labelAt": [590, 506]
+    },
+    {
+      "id": "moderate",
+      "from": "worker",
+      "to": "workflow",
+      "label": "new post"
+    },
+    {
+      "id": "resize",
+      "from": "worker",
+      "to": "images",
+      "label": "resize"
+    },
+    {
+      "id": "prompt",
+      "from": "worker",
+      "to": "ai",
+      "label": "prompt",
+      "labelAt": [900, 370]
+    },
+    {
+      "id": "search",
+      "from": "worker",
+      "to": "vectorize",
+      "label": "search"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Two front doors",
+      "items": [
+        "Static Assets serve every page and script free, with no request limit",
+        "Only /api/*, /img/* and security.txt run the Worker (100,000 requests a day)"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "One Worker, many products",
+      "items": [
+        "D1 stores posts and members; KV caches link previews; R2 keeps photos",
+        "Each chat room is a Durable Object; Queues and Workflows run work in the background"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "AI on the free plan",
+      "items": [
+        "Workers AI answers questions, checks posts and writes alt text (10,000 Neurons a day)",
+        "Vectorize finds posts by meaning; Images resizes every photo"
+      ]
+    }
+  ]
+}

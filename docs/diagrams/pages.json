@@ -1,0 +1,239 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Pages and the installable app",
+    "locale": "en",
+    "output": "app/public/learn/pages.html",
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "frontend": {
+          "label": "Browser"
+        },
+        "backend": {
+          "label": "Worker code"
+        },
+        "database": {
+          "label": "Stored data"
+        },
+        "cloud": {
+          "label": "Cloudflare service"
+        },
+        "external": {
+          "label": "Visitor"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "offline",
+      "label": "Service worker (production only)"
+    },
+    {
+      "id": "device",
+      "label": "Your device"
+    },
+    {
+      "id": "assets",
+      "label": "Static Assets (free)"
+    },
+    {
+      "id": "worker",
+      "label": "Worker (counts toward 100,000 requests a day)"
+    }
+  ],
+  "phases": [
+    {
+      "id": "route",
+      "label": "Route the request",
+      "fromCol": 0,
+      "toCol": 3
+    },
+    {
+      "id": "run",
+      "label": "Run and stay available",
+      "fromCol": 4,
+      "toCol": 5,
+      "variant": "emphasis"
+    }
+  ],
+  "mainPath": [
+    "visit",
+    "route",
+    "files",
+    "spa",
+    "app",
+    "sw",
+    "shell"
+  ],
+  "nodes": [
+    {
+      "id": "visit",
+      "lane": "device",
+      "col": 0,
+      "type": "external",
+      "label": "Open a page",
+      "sublabel": "tab or installed app",
+      "width": 132
+    },
+    {
+      "id": "app",
+      "lane": "device",
+      "col": 4,
+      "type": "frontend",
+      "label": "React app",
+      "sublabel": "router picks the page",
+      "width": 132
+    },
+    {
+      "id": "install",
+      "lane": "device",
+      "col": 5,
+      "type": "frontend",
+      "label": "Install",
+      "sublabel": "web manifest",
+      "width": 124
+    },
+    {
+      "id": "sw",
+      "lane": "offline",
+      "col": 4,
+      "type": "frontend",
+      "label": "Service worker",
+      "sublabel": "sw.js",
+      "width": 140
+    },
+    {
+      "id": "shell",
+      "lane": "offline",
+      "col": 5,
+      "type": "database",
+      "label": "Cached shell",
+      "sublabel": "opens with no network",
+      "width": 132
+    },
+    {
+      "id": "route",
+      "lane": "assets",
+      "col": 1,
+      "type": "cloud",
+      "label": "Check the path",
+      "sublabel": "run_worker_first",
+      "width": 136
+    },
+    {
+      "id": "files",
+      "lane": "assets",
+      "col": 2,
+      "type": "cloud",
+      "label": "Find the file",
+      "sublabel": "found: served as is",
+      "width": 132
+    },
+    {
+      "id": "spa",
+      "lane": "assets",
+      "col": 3,
+      "type": "cloud",
+      "label": "Send index.html",
+      "sublabel": "single-page-application",
+      "width": 144
+    },
+    {
+      "id": "worker",
+      "lane": "worker",
+      "col": 2,
+      "type": "backend",
+      "label": "Run the Worker",
+      "sublabel": "/api/*, /img/*, security.txt",
+      "width": 150
+    }
+  ],
+  "edges": [
+    {
+      "id": "request",
+      "from": "visit",
+      "to": "route",
+      "label": "any path",
+      "variant": "emphasis"
+    },
+    {
+      "id": "to-worker",
+      "from": "route",
+      "to": "worker",
+      "label": "listed paths",
+      "role": "branch"
+    },
+    {
+      "id": "other-paths",
+      "from": "route",
+      "to": "files",
+      "label": "other paths",
+      "variant": "emphasis"
+    },
+    {
+      "id": "no-file",
+      "from": "files",
+      "to": "spa",
+      "label": "no such file",
+      "variant": "emphasis"
+    },
+    {
+      "id": "fallback",
+      "from": "spa",
+      "to": "app",
+      "label": "index.html",
+      "variant": "emphasis"
+    },
+    {
+      "id": "register",
+      "from": "app",
+      "to": "sw",
+      "label": "registers",
+      "variant": "emphasis"
+    },
+    {
+      "id": "precache",
+      "from": "sw",
+      "to": "shell",
+      "label": "saves shell",
+      "variant": "emphasis"
+    },
+    {
+      "id": "manifest",
+      "from": "app",
+      "to": "install",
+      "label": "manifest",
+      "variant": "dashed",
+      "role": "branch"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Two front doors",
+      "items": [
+        "Only /api/*, /img/* and /.well-known/security.txt run the Worker (100,000 requests a day)",
+        "Everything else is served by Static Assets, free with no request limit, so page views never spend that budget"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "One app, many addresses",
+      "items": [
+        "A path with no file gets index.html (single-page-application mode)",
+        "The React router reads the address and shows the page, or Page not found, so any link you type or bookmark works"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Offline and installable",
+      "items": [
+        "In production a service worker saves the app shell, so the app opens offline",
+        "The web manifest sets the name, icons and standalone window that make it installable"
+      ]
+    }
+  ]
+}

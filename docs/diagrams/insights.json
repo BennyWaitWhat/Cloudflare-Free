@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Usage insights and the nightly rollup",
+    "locale": "en",
+    "output": "app/public/learn/insights.html",
+    "quality_profile": "showcase"
+  },
+  "stages": [
+    {
+      "label": "Trigger"
+    },
+    {
+      "label": "Worker code"
+    },
+    {
+      "label": "Record"
+    },
+    {
+      "label": "Route"
+    },
+    {
+      "label": "Read"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "calls",
+      "type": "external",
+      "label": "API calls",
+      "sublabel": "site and app",
+      "stage": 0,
+      "row": 0
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "Worker",
+      "sublabel": "calls track()",
+      "stage": 1,
+      "row": 0
+    },
+    {
+      "id": "analytics",
+      "type": "database",
+      "label": "Analytics Engine",
+      "sublabel": "cloudflare_free_events",
+      "stage": 2,
+      "row": 0
+    },
+    {
+      "id": "logs",
+      "type": "cloud",
+      "label": "Workers Logs",
+      "sublabel": "+ Traces, Issues",
+      "stage": 2,
+      "row": 1
+    },
+    {
+      "id": "cron",
+      "type": "cloud",
+      "label": "Cron Trigger",
+      "sublabel": "03:17 UTC",
+      "stage": 0,
+      "row": 2
+    },
+    {
+      "id": "rollup",
+      "type": "backend",
+      "label": "Rollup job",
+      "sublabel": "handleScheduled",
+      "stage": 1,
+      "row": 2
+    },
+    {
+      "id": "d1",
+      "type": "database",
+      "label": "D1",
+      "sublabel": "daily_stats, tables",
+      "stage": 2,
+      "row": 2
+    },
+    {
+      "id": "stats-route",
+      "type": "backend",
+      "label": "Stats route",
+      "sublabel": "GET /api/stats",
+      "stage": 3,
+      "row": 1
+    },
+    {
+      "id": "admin-route",
+      "type": "backend",
+      "label": "Admin route",
+      "sublabel": "/api/admin/overview",
+      "stage": 3,
+      "row": 2
+    },
+    {
+      "id": "admin-page",
+      "type": "frontend",
+      "label": "Admin page",
+      "sublabel": "owner only",
+      "stage": 4,
+      "row": 2
+    }
+  ],
+  "flows": [
+    {
+      "id": "api-call",
+      "from": "calls",
+      "to": "worker",
+      "label": "request",
+      "variant": "emphasis"
+    },
+    {
+      "id": "data-point",
+      "from": "worker",
+      "to": "analytics",
+      "label": "data point",
+      "variant": "emphasis"
+    },
+    {
+      "id": "observe",
+      "from": "worker",
+      "to": "logs",
+      "label": "observability config",
+      "variant": "default"
+    },
+    {
+      "id": "nightly",
+      "from": "cron",
+      "to": "rollup",
+      "label": "17 3 * * *",
+      "variant": "emphasis"
+    },
+    {
+      "id": "save-totals",
+      "from": "rollup",
+      "to": "d1",
+      "label": "save totals",
+      "variant": "emphasis"
+    },
+    {
+      "id": "latest-row",
+      "from": "d1",
+      "to": "stats-route",
+      "label": "latest row",
+      "variant": "default"
+    },
+    {
+      "id": "live-counts",
+      "from": "d1",
+      "to": "admin-route",
+      "label": "live counts",
+      "variant": "default"
+    },
+    {
+      "id": "summary",
+      "from": "admin-route",
+      "to": "admin-page",
+      "label": "summary",
+      "variant": "default"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Events with track()",
+      "items": [
+        "Routes, the queue, the Workflow, email and cron code call track(), one data point per event",
+        "Each point keeps the event, detail and country, plus the user id or anon",
+        "Free: 100,000 data points a day and 10,000 SQL API queries to read them"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Logs, traces and errors",
+      "items": [
+        "The observability setting in wrangler.jsonc records every request (head_sampling_rate 1)",
+        "Workers Logs: 200,000 events a day, kept 3 days; Traces and Issues are free in beta",
+        "You read them in the Cloudflare dashboard; source maps keep stack traces readable"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "The nightly rollup",
+      "items": [
+        "A Cron Trigger (17 3 * * *) runs the scheduled handler; each run costs one Worker request",
+        "It counts members, published and pending posts, messages and inbox, then saves one daily_stats row",
+        "GET /api/stats returns the latest row; the Admin page counts live instead"
+      ]
+    }
+  ]
+}

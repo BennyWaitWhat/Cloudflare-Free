@@ -1,0 +1,289 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Link previews and screenshots",
+    "locale": "en",
+    "output": "app/public/learn/link-preview.html",
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "frontend": {
+          "label": "Browser"
+        },
+        "backend": {
+          "label": "Worker code"
+        },
+        "security": {
+          "label": "Check or limit"
+        },
+        "database": {
+          "label": "Stored data"
+        },
+        "cloud": {
+          "label": "Cloudflare service"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "preview",
+      "label": "Link preview (anyone)"
+    },
+    {
+      "id": "browser",
+      "label": "Your browser"
+    },
+    {
+      "id": "shot",
+      "label": "Screenshot (members)"
+    }
+  ],
+  "phases": [
+    {
+      "id": "check",
+      "label": "Check and look up",
+      "fromCol": 0,
+      "toCol": 2
+    },
+    {
+      "id": "fetch",
+      "label": "Fetch, save, show",
+      "fromCol": 3,
+      "toCol": 5,
+      "variant": "emphasis"
+    }
+  ],
+  "mainPath": [
+    "url",
+    "guard",
+    "kv",
+    "limit",
+    "fetch",
+    "put",
+    "card"
+  ],
+  "nodes": [
+    {
+      "id": "url",
+      "lane": "browser",
+      "col": 0,
+      "type": "frontend",
+      "label": "Paste a link",
+      "sublabel": "Lab page",
+      "width": 132
+    },
+    {
+      "id": "card",
+      "lane": "browser",
+      "col": 5,
+      "type": "frontend",
+      "label": "Link card",
+      "sublabel": "title, image, text",
+      "width": 140
+    },
+    {
+      "id": "guard",
+      "lane": "preview",
+      "col": 1,
+      "type": "security",
+      "label": "Public-URL guard",
+      "sublabel": "blocks local, private, odd ports",
+      "width": 172
+    },
+    {
+      "id": "kv",
+      "lane": "preview",
+      "col": 2,
+      "type": "database",
+      "label": "Look in KV",
+      "sublabel": "key: hash of the URL",
+      "width": 140
+    },
+    {
+      "id": "limit",
+      "lane": "preview",
+      "col": 3,
+      "type": "security",
+      "label": "Rate limit",
+      "sublabel": "WRITE_LIMITER, 10 a min",
+      "width": 150
+    },
+    {
+      "id": "fetch",
+      "lane": "preview",
+      "col": 4,
+      "type": "backend",
+      "label": "Fetch and read",
+      "sublabel": "og/twitter meta, title",
+      "width": 150
+    },
+    {
+      "id": "put",
+      "lane": "preview",
+      "col": 5,
+      "type": "database",
+      "label": "Save in KV",
+      "sublabel": "kept for 7 days",
+      "width": 140
+    },
+    {
+      "id": "gate",
+      "lane": "shot",
+      "col": 1,
+      "type": "security",
+      "label": "Members only",
+      "sublabel": "signed in, same guard",
+      "width": 150
+    },
+    {
+      "id": "r2",
+      "lane": "shot",
+      "col": 2,
+      "type": "database",
+      "label": "Look in R2",
+      "sublabel": "screenshots/<hash>.webp",
+      "width": 150
+    },
+    {
+      "id": "shot",
+      "lane": "shot",
+      "col": 3,
+      "type": "cloud",
+      "label": "Browser Run",
+      "sublabel": "AI_LIMITER, then capture",
+      "width": 156
+    },
+    {
+      "id": "store",
+      "lane": "shot",
+      "col": 4,
+      "type": "database",
+      "label": "Save in R2",
+      "sublabel": "screenshots/ folder",
+      "width": 140
+    },
+    {
+      "id": "serve",
+      "lane": "shot",
+      "col": 5,
+      "type": "backend",
+      "label": "Serve via /img/",
+      "sublabel": "from R2 to the page",
+      "width": 150
+    }
+  ],
+  "edges": [
+    {
+      "id": "ask-preview",
+      "from": "url",
+      "to": "guard",
+      "variant": "emphasis"
+    },
+    {
+      "id": "allowed",
+      "from": "guard",
+      "to": "kv",
+      "variant": "emphasis"
+    },
+    {
+      "id": "cache-hit",
+      "from": "kv",
+      "to": "card",
+      "label": "hit: card at once",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
+      "id": "cache-miss",
+      "from": "kv",
+      "to": "limit",
+      "label": "miss",
+      "variant": "emphasis"
+    },
+    {
+      "id": "within-limit",
+      "from": "limit",
+      "to": "fetch",
+      "variant": "emphasis"
+    },
+    {
+      "id": "parsed",
+      "from": "fetch",
+      "to": "put",
+      "variant": "emphasis"
+    },
+    {
+      "id": "show-card",
+      "from": "put",
+      "to": "card",
+      "variant": "emphasis"
+    },
+    {
+      "id": "ask-shot",
+      "from": "url",
+      "to": "gate",
+      "variant": "default"
+    },
+    {
+      "id": "gate-pass",
+      "from": "gate",
+      "to": "r2",
+      "variant": "default"
+    },
+    {
+      "id": "no-copy",
+      "from": "r2",
+      "to": "shot",
+      "label": "miss",
+      "variant": "default"
+    },
+    {
+      "id": "have-copy",
+      "from": "r2",
+      "to": "serve",
+      "label": "copy exists",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
+      "id": "captured",
+      "from": "shot",
+      "to": "store",
+      "variant": "default"
+    },
+    {
+      "id": "stored",
+      "from": "store",
+      "to": "serve",
+      "variant": "default"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Preview: guard, cache, fetch",
+      "items": [
+        "POST /api/tools/preview accepts only public http(s) links on ports 80 and 443, so the Worker can't be aimed at localhost or private hosts",
+        "A link already in KV returns at once; on a miss the Worker reads only the page head (up to </head> or 256 KB) with HTMLRewriter"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Screenshot: members only",
+      "items": [
+        "POST /api/tools/screenshot needs a signed-in member; an existing R2 copy is reused, so each page is captured once",
+        "Otherwise Browser Run takes the picture, the Worker saves it under screenshots/ in R2 and serves it through /img/"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Free allowances",
+      "items": [
+        "KV allows 1,000 writes a day; a link is written only on a cache miss and kept for 7 days",
+        "Browser Run allows 10 minutes a day, so a screenshot is rate limited (AI_LIMITER, 6 a minute) and kept in R2"
+      ]
+    }
+  ]
+}

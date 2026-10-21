@@ -1,0 +1,177 @@
+{
+  "schema_version": 3,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "A post's journey",
+    "locale": "en",
+    "output": "app/public/learn/post-lifecycle.html",
+    "quality_profile": "showcase"
+  },
+  "mainPath": [
+    "pending",
+    "loading",
+    "checking",
+    "enriching",
+    "published"
+  ],
+  "states": [
+    {
+      "id": "pending",
+      "type": "start",
+      "label": "Pending",
+      "sublabel": "POST /api/posts",
+      "tag": "202",
+      "step": "01"
+    },
+    {
+      "id": "loading",
+      "type": "active",
+      "label": "Load post",
+      "sublabel": "Workflow starts",
+      "tag": "workflow",
+      "step": "02"
+    },
+    {
+      "id": "checking",
+      "type": "decision",
+      "label": "Safety check",
+      "sublabel": "Llama Guard",
+      "tag": "2 retries",
+      "step": "03"
+    },
+    {
+      "id": "enriching",
+      "type": "active",
+      "label": "Alt text and index",
+      "sublabel": "best effort, can be skipped",
+      "tag": "best effort",
+      "step": "04"
+    },
+    {
+      "id": "published",
+      "type": "success",
+      "label": "Published",
+      "sublabel": "shown in the feed",
+      "tag": "done",
+      "step": "05"
+    },
+    {
+      "id": "retrying",
+      "type": "failure",
+      "label": "Check failed",
+      "sublabel": "retries twice",
+      "tag": "retryable"
+    },
+    {
+      "id": "rejected",
+      "type": "failure",
+      "label": "Rejected",
+      "sublabel": "kept out of the feed",
+      "tag": "final"
+    },
+    {
+      "id": "waiting",
+      "type": "waiting",
+      "label": "Waiting for admin",
+      "sublabel": "post stays pending",
+      "tag": "pause"
+    }
+  ],
+  "transitions": [
+    {
+      "id": "pending-loading",
+      "from": "pending",
+      "to": "loading",
+      "label": "start Workflow"
+    },
+    {
+      "id": "loading-checking",
+      "from": "loading",
+      "to": "checking",
+      "label": "post loaded"
+    },
+    {
+      "id": "checking-enriching",
+      "from": "checking",
+      "to": "enriching",
+      "label": "safe"
+    },
+    {
+      "id": "enriching-published",
+      "from": "enriching",
+      "to": "published",
+      "label": "publish post"
+    },
+    {
+      "id": "check-fails",
+      "from": "checking",
+      "to": "retrying",
+      "label": "check fails",
+      "variant": "security"
+    },
+    {
+      "id": "retry",
+      "from": "retrying",
+      "to": "checking",
+      "label": "retry",
+      "variant": "emphasis"
+    },
+    {
+      "id": "unsafe",
+      "from": "checking",
+      "to": "rejected",
+      "label": "unsafe",
+      "variant": "security"
+    },
+    {
+      "id": "retries-used-up",
+      "from": "retrying",
+      "to": "waiting",
+      "label": "retries used up",
+      "variant": "security"
+    },
+    {
+      "id": "admin-publishes",
+      "from": "waiting",
+      "to": "published",
+      "label": "admin publishes",
+      "variant": "dashed"
+    },
+    {
+      "id": "admin-rejects",
+      "from": "waiting",
+      "to": "rejected",
+      "label": "admin rejects",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "From post to published",
+      "items": [
+        "Saved as pending; the API answers 202 right away and the Workflow does the rest",
+        "It checks safety, adds alt text for photos and a search entry, then publishes",
+        "The Composer polls every 2 s for about 30 s, then says it is still being checked"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "When the check fails",
+      "items": [
+        "It retries twice, waiting 10 s then longer; each try gets 2 minutes",
+        "Finished steps are saved, so a retry doesn't redo them",
+        "Unsafe: rejected, with the flagged categories saved as a note"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "If retries run out",
+      "items": [
+        "The Workflow errors and the row stays pending, also if the Workflow can't start",
+        "The owner can Publish or Reject on the Admin page; nothing sets it back to pending",
+        "Free: 3,000 Workflow steps a day; a post uses up to 5"
+      ]
+    }
+  ]
+}

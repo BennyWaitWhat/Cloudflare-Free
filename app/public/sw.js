@@ -27,7 +27,8 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
+  // The API, the diagram pages in /learn and security.txt aren't part of the app shell.
+  if (url.origin !== self.location.origin || /^\/(api|learn|\.well-known)\//.test(url.pathname)) return;
 
   // Pages: network first, falling back to the cached shell when offline.
   if (request.mode === "navigate") {

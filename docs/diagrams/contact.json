@@ -1,0 +1,274 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Sending a contact message",
+    "locale": "en",
+    "output": "app/public/learn/contact.html",
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "frontend": {
+          "label": "Browser"
+        },
+        "backend": {
+          "label": "Worker code"
+        },
+        "security": {
+          "label": "Check or limit"
+        },
+        "messagebus": {
+          "label": "Queue"
+        },
+        "database": {
+          "label": "Stored data"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "browser",
+      "label": "Browsers"
+    },
+    {
+      "id": "api",
+      "label": "Worker"
+    },
+    {
+      "id": "queue",
+      "label": "Queue and consumer"
+    },
+    {
+      "id": "failure",
+      "label": "If a message fails",
+      "variant": "exception"
+    }
+  ],
+  "phases": [
+    {
+      "id": "send",
+      "label": "Send and answer",
+      "fromCol": 0,
+      "toCol": 2
+    },
+    {
+      "id": "background",
+      "label": "Work in the background",
+      "fromCol": 3,
+      "toCol": 5,
+      "variant": "emphasis"
+    }
+  ],
+  "mainPath": [
+    "form",
+    "post",
+    "guard",
+    "queue",
+    "consumer",
+    "store",
+    "email"
+  ],
+  "nodes": [
+    {
+      "id": "form",
+      "lane": "browser",
+      "col": 0,
+      "type": "frontend",
+      "label": "Contact form",
+      "sublabel": "Turnstile widget, token",
+      "width": 140
+    },
+    {
+      "id": "thanks",
+      "lane": "browser",
+      "col": 3,
+      "type": "frontend",
+      "label": "Thanks screen",
+      "sublabel": "202 accepted",
+      "width": 132
+    },
+    {
+      "id": "inbox",
+      "lane": "browser",
+      "col": 4,
+      "type": "frontend",
+      "label": "Admin inbox",
+      "sublabel": "GET /api/admin/messages",
+      "width": 156
+    },
+    {
+      "id": "post",
+      "lane": "api",
+      "col": 1,
+      "type": "backend",
+      "label": "Validate form",
+      "sublabel": "POST /api/contact",
+      "width": 140
+    },
+    {
+      "id": "guard",
+      "lane": "api",
+      "col": 2,
+      "type": "security",
+      "label": "Limit and verify",
+      "sublabel": "siteverify, then JOBS.send",
+      "width": 164
+    },
+    {
+      "id": "queue",
+      "lane": "queue",
+      "col": 2,
+      "type": "messagebus",
+      "label": "Jobs queue",
+      "sublabel": "cloudflare-free-jobs",
+      "width": 150
+    },
+    {
+      "id": "consumer",
+      "lane": "queue",
+      "col": 3,
+      "type": "backend",
+      "label": "Queue consumer",
+      "sublabel": "batch: 10 messages or 5 s",
+      "width": 156
+    },
+    {
+      "id": "store",
+      "lane": "queue",
+      "col": 4,
+      "type": "database",
+      "label": "Save in D1",
+      "sublabel": "INSERT OR IGNORE",
+      "width": 140
+    },
+    {
+      "id": "email",
+      "lane": "queue",
+      "col": 5,
+      "type": "external",
+      "label": "Email the owner",
+      "sublabel": "if email is set up",
+      "width": 150
+    },
+    {
+      "id": "retry",
+      "lane": "failure",
+      "col": 3,
+      "type": "messagebus",
+      "label": "Retry on error",
+      "sublabel": "30 s later, 3 times",
+      "width": 150
+    },
+    {
+      "id": "dlq",
+      "lane": "failure",
+      "col": 5,
+      "type": "messagebus",
+      "label": "Dead-letter queue",
+      "sublabel": "cloudflare-free-jobs-dlq",
+      "width": 164
+    }
+  ],
+  "edges": [
+    {
+      "id": "submit",
+      "from": "form",
+      "to": "post",
+      "variant": "emphasis"
+    },
+    {
+      "id": "checked",
+      "from": "post",
+      "to": "guard",
+      "variant": "emphasis"
+    },
+    {
+      "id": "accepted",
+      "from": "guard",
+      "to": "thanks",
+      "variant": "dashed",
+      "role": "return"
+    },
+    {
+      "id": "enqueue",
+      "from": "guard",
+      "to": "queue",
+      "variant": "emphasis"
+    },
+    {
+      "id": "deliver",
+      "from": "queue",
+      "to": "consumer",
+      "variant": "emphasis"
+    },
+    {
+      "id": "save",
+      "from": "consumer",
+      "to": "store",
+      "variant": "emphasis"
+    },
+    {
+      "id": "notify",
+      "from": "store",
+      "to": "email",
+      "variant": "emphasis"
+    },
+    {
+      "id": "read",
+      "from": "inbox",
+      "to": "store",
+      "variant": "dashed",
+      "role": "async"
+    },
+    {
+      "id": "failed",
+      "from": "consumer",
+      "to": "retry",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "again",
+      "from": "retry",
+      "to": "queue",
+      "label": "30 s later",
+      "variant": "dashed",
+      "role": "return"
+    },
+    {
+      "id": "give-up",
+      "from": "retry",
+      "to": "dlq",
+      "label": "after 3 retries",
+      "variant": "security",
+      "role": "error"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Answer fast, work later",
+      "items": [
+        "The Worker checks the write limit (10 a minute) and Turnstile, queues the message and answers 202 at once",
+        "Saving to D1 and emailing the owner happen later in the consumer (handleQueue), so the visitor never waits"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Safe to retry",
+      "items": [
+        "INSERT OR IGNORE means a retried message never makes a duplicate row",
+        "After an error the message waits 30 s; after 3 retries it moves to cloudflare-free-jobs-dlq"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Free allowance",
+      "items": [
+        "Queues allow 10,000 operations a day; a delivered message uses 3, so about 3,300 messages",
+        "The owner is emailed only when the email settings exist; the message is saved either way"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,246 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Live chat in a Durable Object",
+    "locale": "en",
+    "output": "app/public/learn/chat.html",
+    "quality_profile": "showcase",
+    "viewBox": [1060, 626],
+    "column_fit": "spread"
+  },
+  "participants": [
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Browser",
+      "sublabel": "ChatPanel"
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "Worker",
+      "sublabel": "reads session, adds x-chat-user"
+    },
+    {
+      "id": "room",
+      "type": "backend",
+      "label": "ChatRoom",
+      "sublabel": "CHAT_ROOM, one per room"
+    },
+    {
+      "id": "sql",
+      "type": "database",
+      "label": "SQLite",
+      "sublabel": "messages table"
+    },
+    {
+      "id": "everyone",
+      "type": "external",
+      "label": "Everyone",
+      "sublabel": "all open sockets"
+    }
+  ],
+  "segments": [
+    {
+      "from": 144,
+      "to": 288,
+      "label": "Connect"
+    },
+    {
+      "from": 306,
+      "to": 450,
+      "label": "Send"
+    },
+    {
+      "from": 468,
+      "to": 528,
+      "label": "Keep alive"
+    }
+  ],
+  "messages": [
+    {
+      "id": "c-ws",
+      "from": "browser",
+      "to": "worker",
+      "y": 164,
+      "label": "WebSocket /api/chat/:room/ws",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c-fetch",
+      "from": "worker",
+      "to": "room",
+      "y": 192,
+      "label": "getByName(room).fetch",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c-history",
+      "from": "room",
+      "to": "sql",
+      "y": 220,
+      "label": "read last 50 messages"
+    },
+    {
+      "id": "c-accept",
+      "from": "room",
+      "to": "browser",
+      "y": 248,
+      "label": "acceptWebSocket, then history",
+      "variant": "return"
+    },
+    {
+      "id": "c-online",
+      "from": "room",
+      "to": "everyone",
+      "y": 276,
+      "label": "online count"
+    },
+    {
+      "id": "m-send",
+      "from": "browser",
+      "to": "room",
+      "y": 326,
+      "label": "send text (500 chars, 1 a second)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-insert",
+      "from": "room",
+      "to": "sql",
+      "y": 354,
+      "label": "INSERT ... RETURNING id",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-id",
+      "from": "sql",
+      "to": "room",
+      "y": 382,
+      "label": "new id",
+      "variant": "return"
+    },
+    {
+      "id": "m-stale",
+      "from": "room",
+      "to": "everyone",
+      "y": 410,
+      "label": "close sockets silent 75 s",
+      "variant": "dashed"
+    },
+    {
+      "id": "m-broadcast",
+      "from": "room",
+      "to": "everyone",
+      "y": 438,
+      "label": "broadcast to every socket",
+      "variant": "emphasis"
+    },
+    {
+      "id": "k-ping",
+      "from": "browser",
+      "to": "room",
+      "y": 488,
+      "label": "ping every 25 s",
+      "variant": "dashed"
+    },
+    {
+      "id": "k-pong",
+      "from": "room",
+      "to": "browser",
+      "y": 516,
+      "label": "pong, no wake-up",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "browser",
+      "from": 158,
+      "to": 254,
+      "type": "frontend"
+    },
+    {
+      "participant": "browser",
+      "from": 320,
+      "to": 332,
+      "type": "frontend"
+    },
+    {
+      "participant": "browser",
+      "from": 482,
+      "to": 494,
+      "type": "frontend"
+    },
+    {
+      "participant": "worker",
+      "from": 158,
+      "to": 198,
+      "type": "backend"
+    },
+    {
+      "participant": "room",
+      "from": 186,
+      "to": 282,
+      "type": "backend"
+    },
+    {
+      "participant": "room",
+      "from": 320,
+      "to": 444,
+      "type": "backend"
+    },
+    {
+      "participant": "sql",
+      "from": 214,
+      "to": 226,
+      "type": "database"
+    },
+    {
+      "participant": "sql",
+      "from": 348,
+      "to": 388,
+      "type": "database"
+    },
+    {
+      "participant": "everyone",
+      "from": 270,
+      "to": 282,
+      "type": "external"
+    },
+    {
+      "participant": "everyone",
+      "from": 404,
+      "to": 444,
+      "type": "external"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "One object per room",
+      "items": [
+        "Four rooms (lobby, showcase, help, off-topic), one Durable Object each",
+        "The Worker adds x-chat-user from your session; guests can read, not send"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Hibernation keeps it free",
+      "items": [
+        "Durable Objects free: 100,000 requests and 13,000 GB-s a day",
+        "Idle rooms leave memory while sockets stay open, so no GB-s are spent"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Small and tidy",
+      "items": [
+        "setWebSocketAutoResponse replies to pings without waking the room",
+        "Limits: 500 characters, 1 message a second, about 200 kept",
+        "Sockets silent for 75 s are closed, so the online count stays honest"
+      ]
+    }
+  ]
+}

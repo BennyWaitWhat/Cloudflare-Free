@@ -201,6 +201,10 @@ pre {
   border-color: var(--accent);
 }
 
+.tile .eyebrow {
+  margin-bottom: 0.3rem;
+}
+
 .grid {
   display: grid;
   gap: 1rem;

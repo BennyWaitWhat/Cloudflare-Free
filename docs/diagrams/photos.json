@@ -1,0 +1,261 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Uploading and serving photos",
+    "locale": "en",
+    "output": "app/public/learn/photos.html",
+    "quality_profile": "showcase",
+    "viewBox": [1060, 660],
+    "column_fit": "spread"
+  },
+  "participants": [
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Browser",
+      "sublabel": "Composer, PostCard"
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "Worker",
+      "sublabel": "Hono routes"
+    },
+    {
+      "id": "cache",
+      "type": "cloud",
+      "label": "Cache API",
+      "sublabel": "edge cache"
+    },
+    {
+      "id": "r2",
+      "type": "database",
+      "label": "R2",
+      "sublabel": "MEDIA bucket"
+    },
+    {
+      "id": "images",
+      "type": "cloud",
+      "label": "Images",
+      "sublabel": "IMAGES binding"
+    },
+    {
+      "id": "d1",
+      "type": "database",
+      "label": "D1",
+      "sublabel": "uploads table"
+    }
+  ],
+  "segments": [
+    {
+      "from": 144,
+      "to": 260,
+      "label": "Upload"
+    },
+    {
+      "from": 278,
+      "to": 562,
+      "label": "Serve"
+    }
+  ],
+  "messages": [
+    {
+      "id": "u-post",
+      "from": "browser",
+      "to": "worker",
+      "y": 164,
+      "label": "POST /api/uploads",
+      "variant": "emphasis"
+    },
+    {
+      "id": "u-put",
+      "from": "worker",
+      "to": "r2",
+      "y": 192,
+      "label": "put uploads/<user>/<uuid>.<ext>",
+      "variant": "emphasis"
+    },
+    {
+      "id": "u-row",
+      "from": "worker",
+      "to": "d1",
+      "y": 220,
+      "label": "add uploads row"
+    },
+    {
+      "id": "u-done",
+      "from": "worker",
+      "to": "browser",
+      "y": 248,
+      "label": "201 + key + url",
+      "variant": "return"
+    },
+    {
+      "id": "s-get",
+      "from": "browser",
+      "to": "worker",
+      "y": 298,
+      "label": "GET /img/<key>?w=640",
+      "variant": "emphasis"
+    },
+    {
+      "id": "s-match",
+      "from": "worker",
+      "to": "cache",
+      "y": 326,
+      "label": "cache.match"
+    },
+    {
+      "id": "s-miss",
+      "from": "cache",
+      "to": "worker",
+      "y": 354,
+      "label": "miss",
+      "variant": "return"
+    },
+    {
+      "id": "s-read",
+      "from": "worker",
+      "to": "r2",
+      "y": 382,
+      "label": "read the original"
+    },
+    {
+      "id": "s-original",
+      "from": "r2",
+      "to": "worker",
+      "y": 410,
+      "label": "original image",
+      "variant": "return"
+    },
+    {
+      "id": "s-resize",
+      "from": "worker",
+      "to": "images",
+      "y": 438,
+      "label": "resize: 320/640/1280, AVIF/WebP/JPEG",
+      "variant": "emphasis"
+    },
+    {
+      "id": "s-resized",
+      "from": "images",
+      "to": "worker",
+      "y": 466,
+      "label": "resized image",
+      "variant": "return"
+    },
+    {
+      "id": "s-error",
+      "from": "images",
+      "to": "worker",
+      "y": 494,
+      "label": "or error 9422: serve original",
+      "variant": "return"
+    },
+    {
+      "id": "s-put",
+      "from": "worker",
+      "to": "cache",
+      "y": 522,
+      "label": "cache.put",
+      "variant": "dashed"
+    },
+    {
+      "id": "s-image",
+      "from": "worker",
+      "to": "browser",
+      "y": 550,
+      "label": "image, cache 1 year",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "browser",
+      "from": 158,
+      "to": 254,
+      "type": "frontend"
+    },
+    {
+      "participant": "browser",
+      "from": 292,
+      "to": 556,
+      "type": "frontend"
+    },
+    {
+      "participant": "worker",
+      "from": 158,
+      "to": 254,
+      "type": "backend"
+    },
+    {
+      "participant": "worker",
+      "from": 292,
+      "to": 556,
+      "type": "backend"
+    },
+    {
+      "participant": "cache",
+      "from": 320,
+      "to": 360,
+      "type": "cloud"
+    },
+    {
+      "participant": "cache",
+      "from": 516,
+      "to": 528,
+      "type": "cloud"
+    },
+    {
+      "participant": "r2",
+      "from": 186,
+      "to": 198,
+      "type": "database"
+    },
+    {
+      "participant": "r2",
+      "from": 376,
+      "to": 416,
+      "type": "database"
+    },
+    {
+      "participant": "images",
+      "from": 432,
+      "to": 500,
+      "type": "cloud"
+    },
+    {
+      "participant": "d1",
+      "from": 214,
+      "to": 226,
+      "type": "database"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Upload once",
+      "items": [
+        "Signed-in users send JPEG, PNG, WebP, GIF or AVIF, up to 8 MB",
+        "R2 (10 GB free, free egress) keeps the original; D1 records the owner"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Three sizes only",
+      "items": [
+        "Only w=320, 640 or 1280 are resized; Accept picks AVIF, WebP or JPEG",
+        "Images free: 5,000 transformations a month, so 3 per photo at most"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Cache first, then fall back",
+      "items": [
+        "On a hit the Cache API answers at once (up to a year, no quota)",
+        "If a resize fails (error 9422 past 5,000), the original is served"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "The Lab's tools",
+    "locale": "en",
+    "output": "app/public/learn/lab-tools.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "lab",
+      "type": "frontend",
+      "label": "Lab page",
+      "sublabel": "in your browser",
+      "pos": [40, 318],
+      "size": [160, 64]
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "Worker",
+      "sublabel": "/api/tools, /api/ai",
+      "pos": [300, 308],
+      "size": [190, 84]
+    },
+    {
+      "id": "doh",
+      "type": "external",
+      "label": "1.1.1.1",
+      "sublabel": "DNS over HTTPS",
+      "pos": [125, 80],
+      "size": [160, 64]
+    },
+    {
+      "id": "status",
+      "type": "external",
+      "label": "Cloudflare Status",
+      "sublabel": "summary.json",
+      "pos": [315, 80],
+      "size": [160, 64]
+    },
+    {
+      "id": "drand",
+      "type": "external",
+      "label": "drand",
+      "sublabel": "public randomness",
+      "pos": [505, 80],
+      "size": [160, 64]
+    },
+    {
+      "id": "limiter",
+      "type": "security",
+      "label": "AI rate limit",
+      "sublabel": "AI_LIMITER",
+      "pos": [600, 318],
+      "size": [170, 64]
+    },
+    {
+      "id": "guard",
+      "type": "security",
+      "label": "Llama Guard",
+      "sublabel": "screens the prompt",
+      "pos": [850, 318],
+      "size": [170, 64]
+    },
+    {
+      "id": "flux",
+      "type": "cloud",
+      "label": "FLUX.1 schnell",
+      "sublabel": "draws the image",
+      "pos": [850, 470],
+      "size": [170, 64]
+    },
+    {
+      "id": "markdown",
+      "type": "cloud",
+      "label": "toMarkdown",
+      "sublabel": "documents to text",
+      "pos": [850, 622],
+      "size": [170, 64]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Workers AI",
+      "wraps": [
+        "guard",
+        "flux",
+        "markdown"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "lab-requests",
+      "from": "lab",
+      "to": "worker",
+      "label": "fetch /api",
+      "variant": "emphasis"
+    },
+    {
+      "id": "dns-query",
+      "from": "worker",
+      "to": "doh",
+      "label": "DNS query",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "status-summary",
+      "from": "worker",
+      "to": "status",
+      "label": "cached 60 s",
+      "labelAt": [395, 185]
+    },
+    {
+      "id": "dice-round",
+      "from": "worker",
+      "to": "drand",
+      "label": "latest round",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "ai-calls",
+      "from": "worker",
+      "to": "limiter",
+      "label": "AI calls"
+    },
+    {
+      "id": "image-prompt",
+      "from": "limiter",
+      "to": "guard",
+      "label": "image prompt"
+    },
+    {
+      "id": "safe-prompt",
+      "from": "guard",
+      "to": "flux",
+      "label": "if safe",
+      "labelAt": [935, 426]
+    },
+    {
+      "id": "document",
+      "from": "limiter",
+      "to": "markdown",
+      "label": "document"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Public data, no keys",
+      "items": [
+        "DNS answers come from the 1.1.1.1 resolver's DNS-over-HTTPS API",
+        "Cloudflare's status is cached at the edge for 60 seconds",
+        "Dice rolls use a public drand round anyone can verify"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "AI tools share one budget",
+      "items": [
+        "Image prompts pass Llama Guard before FLUX.1 schnell draws them",
+        "Documents under 5 MB become Markdown with toMarkdown",
+        "AI_LIMITER allows 6 AI calls a minute per visitor, within 10,000 Neurons a day"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Your edge",
+      "items": [
+        "request.cf tells the Worker which data center served you",
+        "It also reports the HTTP protocol and TLS version, with no extra request"
+      ]
+    }
+  ]
+}

@@ -9,3 +9,7 @@ dist/
 .DS_Store
 coverage/
 .claude/
+# Archify's receipts and check reports, written next to each diagram
+public/learn/*.json
+public/learn/*.png
+public/learn/*.visual-check.*

@@ -1,0 +1,278 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Posting a photo",
+    "locale": "en",
+    "output": "app/public/learn/posting.html",
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "frontend": {
+          "label": "Browser"
+        },
+        "backend": {
+          "label": "Worker code"
+        },
+        "security": {
+          "label": "Check or limit"
+        },
+        "database": {
+          "label": "Stored data"
+        },
+        "cloud": {
+          "label": "Cloudflare service"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "member",
+      "label": "Member's browser"
+    },
+    {
+      "id": "api",
+      "label": "Worker"
+    },
+    {
+      "id": "flow",
+      "label": "ModeratePostWorkflow"
+    },
+    {
+      "id": "result",
+      "label": "Status in D1"
+    }
+  ],
+  "phases": [
+    {
+      "id": "create",
+      "label": "Upload and create",
+      "fromCol": 0,
+      "toCol": 2
+    },
+    {
+      "id": "moderate",
+      "label": "Moderate and publish",
+      "fromCol": 3,
+      "toCol": 5,
+      "variant": "emphasis"
+    }
+  ],
+  "mainPath": [
+    "compose",
+    "upload",
+    "guard",
+    "pending",
+    "load",
+    "safety",
+    "describe",
+    "index",
+    "publish",
+    "poll"
+  ],
+  "nodes": [
+    {
+      "id": "compose",
+      "lane": "member",
+      "col": 0,
+      "type": "frontend",
+      "label": "Write a post",
+      "sublabel": "photo, text, Turnstile",
+      "width": 132
+    },
+    {
+      "id": "poll",
+      "lane": "member",
+      "col": 5,
+      "type": "frontend",
+      "label": "Poll the post",
+      "sublabel": "every 2 s, up to 30 s",
+      "width": 140
+    },
+    {
+      "id": "upload",
+      "lane": "api",
+      "col": 0,
+      "type": "database",
+      "label": "Save the photo",
+      "sublabel": "POST /api/uploads, R2",
+      "width": 160
+    },
+    {
+      "id": "guard",
+      "lane": "api",
+      "col": 1,
+      "type": "security",
+      "label": "Request checks",
+      "sublabel": "limit, Turnstile, owner",
+      "width": 140
+    },
+    {
+      "id": "pending",
+      "lane": "api",
+      "col": 2,
+      "type": "database",
+      "label": "Save as pending",
+      "sublabel": "D1 row, then Workflow",
+      "width": 146
+    },
+    {
+      "id": "load",
+      "lane": "flow",
+      "col": 2,
+      "type": "backend",
+      "label": "load post",
+      "sublabel": "MODERATE_POST.create",
+      "width": 146
+    },
+    {
+      "id": "safety",
+      "lane": "flow",
+      "col": 3,
+      "type": "cloud",
+      "label": "check safety",
+      "sublabel": "Llama Guard; retries",
+      "width": 132
+    },
+    {
+      "id": "describe",
+      "lane": "flow",
+      "col": 4,
+      "type": "cloud",
+      "label": "describe photo",
+      "sublabel": "640 px; skips on failure",
+      "width": 140
+    },
+    {
+      "id": "index",
+      "lane": "flow",
+      "col": 5,
+      "type": "database",
+      "label": "index for search",
+      "sublabel": "Vectorize; skips on failure",
+      "width": 150
+    },
+    {
+      "id": "reject",
+      "lane": "result",
+      "col": 3,
+      "type": "security",
+      "label": "reject post",
+      "sublabel": "unsafe: status rejected",
+      "width": 132
+    },
+    {
+      "id": "publish",
+      "lane": "result",
+      "col": 5,
+      "type": "backend",
+      "label": "publish post",
+      "sublabel": "status published",
+      "width": 140
+    }
+  ],
+  "edges": [
+    {
+      "id": "send-photo",
+      "from": "compose",
+      "to": "upload",
+      "variant": "emphasis"
+    },
+    {
+      "id": "photo-key",
+      "from": "upload",
+      "to": "guard",
+      "label": "photo key",
+      "variant": "emphasis"
+    },
+    {
+      "id": "checks-pass",
+      "from": "guard",
+      "to": "pending",
+      "variant": "emphasis"
+    },
+    {
+      "id": "start-workflow",
+      "from": "pending",
+      "to": "load",
+      "variant": "emphasis"
+    },
+    {
+      "id": "accepted",
+      "from": "pending",
+      "to": "poll",
+      "label": "202 right away",
+      "variant": "dashed",
+      "role": "async"
+    },
+    {
+      "id": "to-safety",
+      "from": "load",
+      "to": "safety",
+      "variant": "emphasis"
+    },
+    {
+      "id": "is-safe",
+      "from": "safety",
+      "to": "describe",
+      "label": "safe",
+      "variant": "emphasis"
+    },
+    {
+      "id": "is-unsafe",
+      "from": "safety",
+      "to": "reject",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "to-index",
+      "from": "describe",
+      "to": "index",
+      "variant": "emphasis"
+    },
+    {
+      "id": "to-publish",
+      "from": "index",
+      "to": "publish",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "id": "published",
+      "from": "publish",
+      "to": "poll",
+      "label": "published",
+      "variant": "dashed",
+      "role": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Upload first, then post",
+      "items": [
+        "The photo goes straight into R2 (8 MB at most) and D1 records who owns it",
+        "POST /api/posts checks the write limit (10 a minute), Turnstile and photo ownership, saves a pending row and answers 202"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "A durable Workflow",
+      "items": [
+        "Models: llama-guard-3-8b checks safety, llava-1.5-7b-hf describes the photo, bge-small-en-v1.5 embeds the post",
+        "Those steps retry twice with backoff; photo and search are best effort, so the post still publishes if they fail"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Free allowances",
+      "items": [
+        "Workflows allow 3,000 steps a day; a post uses 3 to 5",
+        "Workers AI allows 10,000 Neurons a day, shared by safety, vision and search",
+        "The Worker answers 202 at once and never waits for the AI steps"
+      ]
+    }
+  ]
+}
