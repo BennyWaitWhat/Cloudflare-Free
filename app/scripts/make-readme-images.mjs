@@ -1,5 +1,6 @@
 // Makes the README images in ../docs/images from the running dev site, in light and dark:
 // a hero shot (desktop and phone), a tour of three phone screens, and the scoreboard bar.
+// The light pass also writes public/og.png, the 1200x630 picture that link previews show.
 // Run `npm run dev` and `npm run demo` first, then `npm run readme:images` (Node 22.18+).
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -9,6 +10,7 @@ import { launch } from "./chrome.mjs";
 import { SITE, sessionCookie } from "./seed-demo.mjs";
 
 const OUT = fileURLToPath(new URL("../../docs/images/", import.meta.url));
+const PUBLIC = fileURLToPath(new URL("../public/", import.meta.url));
 const DESKTOP = { width: 1280, height: 800 };
 const PHONE = { width: 390, height: 844, mobile: true };
 
@@ -147,6 +149,7 @@ function styles(theme) {
 html, body { background: transparent; }
 body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; color: ${theme.text}; }
 .canvas { position: relative; overflow: hidden; border-radius: 28px; background: ${theme.backdrop}; box-shadow: inset 0 0 0 1px ${theme.edge}; }
+.canvas.square { border-radius: 0; }
 .dots { position: absolute; inset: 0; background-image: radial-gradient(${theme.dots} 1.1px, transparent 1.4px); background-size: 22px 22px; -webkit-mask-image: radial-gradient(ellipse 75% 65% at 50% 45%, transparent 10%, #000 100%); }
 .window { position: absolute; border-radius: 14px; overflow: hidden; background: ${theme.surface}; box-shadow: ${theme.windowShadow}; }
 .bar { position: relative; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 16px; background: ${theme.surface2}; border-bottom: 1px solid ${theme.border}; }
@@ -164,8 +167,8 @@ body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -w
 `;
 }
 
-const page = (theme, width, height, body) =>
-  `<!doctype html><html><head><meta charset="utf-8"><style>${styles(theme)}</style></head><body><div class="canvas" style="width:${width}px;height:${height}px"><div class="dots"></div>${body}</div></body></html>`;
+const page = (theme, width, height, body, { square = false } = {}) =>
+  `<!doctype html><html><head><meta charset="utf-8"><style>${styles(theme)}</style></head><body><div class="canvas${square ? " square" : ""}" style="width:${width}px;height:${height}px"><div class="dots"></div>${body}</div></body></html>`;
 
 const browserWindow = (png, { left, top, width }) => `
 <div class="window" style="left:${left}px;top:${top}px;width:${width}px">
@@ -190,6 +193,17 @@ function heroHtml(theme, shots) {
     700,
     // The phone overlaps the window enough to hide the desktop "Sign in" button behind it.
     browserWindow(shots.home, { left: 69, top: 58, width: 880 }) + phone(shots.scoreboard, { left: 859, top: 96, width: 272 }),
+  );
+}
+
+/** The share card for link previews. Its corners are square because each site frames the picture its own way. */
+function shareCardHtml(theme, shots) {
+  return page(
+    theme,
+    1200,
+    630,
+    browserWindow(shots.home, { left: 70, top: 50, width: 760 }) + phone(shots.scoreboard, { left: 880, top: 64, width: 250 }),
+    { square: true },
   );
 }
 
@@ -233,12 +247,12 @@ ul { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; lis
 li { display: flex; align-items: center; gap: 6px; }
 li i { width: 10px; height: 10px; border-radius: 50%; }
 li b { color: ${theme.text}; font-weight: 650; }
-</style></head><body><div class="score"><p><b>${totals.built} of ${totals.total}</b> free Cloudflare products have working code</p><div class="track">${parts}</div><ul>${legend}</ul></div></body></html>`;
+</style></head><body><div class="score"><p><b>${totals.withCode} of ${totals.total}</b> free Cloudflare products run on code here, plus ${totals.settings} free settings</p><div class="track">${parts}</div><ul>${legend}</ul></div></body></html>`;
 }
 
-/** Renders HTML and captures the first element under body. */
-async function render(browserPage, html, width, format) {
-  await browserPage.open("about:blank", { width, height: 900, scale: 2, transparent: true });
+/** Renders HTML and captures the first element under body, at `scale` image pixels per CSS pixel. */
+async function render(browserPage, html, width, format, scale = 2) {
+  await browserPage.open("about:blank", { width, height: 900, scale, transparent: true });
   await browserPage.setContent(html);
   await browserPage.waitFor("[...document.images].every((image) => image.complete && image.naturalWidth > 0)");
   const box = await browserPage.evaluate(
@@ -275,6 +289,12 @@ async function main() {
       for (const [file, bytes] of Object.entries(images)) {
         writeFileSync(join(OUT, file), bytes);
         console.log(`docs/images/${file}: ${Math.round(bytes.length / 1024)} KB`);
+      }
+      if (scheme === "light") {
+        // At 1x, so the file is exactly 1200x630 and stays small enough for every link preview.
+        const card = await render(browserPage, shareCardHtml(theme, shots), 1200, "png", 1);
+        writeFileSync(join(PUBLIC, "og.png"), card);
+        console.log(`app/public/og.png: ${Math.round(card.length / 1024)} KB`);
       }
     }
   } finally {

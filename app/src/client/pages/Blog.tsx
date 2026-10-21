@@ -3,6 +3,7 @@ import type { PublicPost } from "../../shared/types";
 import { api, errorMessage } from "../api";
 import { Composer } from "../components/Composer";
 import { PostCard } from "../components/PostCard";
+import { Link } from "../router";
 import { useSite } from "../site";
 import { useFeed } from "./Community";
 
@@ -19,11 +20,26 @@ export function Blog() {
       <SiteSearch />
       {user?.isAdmin && <Composer kind="blog" onPosted={feed.reload} />}
       <div className="stack">
-        {feed.error && <p className="error">{feed.error}</p>}
+        {feed.error && (
+          <div className="row">
+            <p className="error" role="alert">{feed.error}</p>
+            <button type="button" className="secondary" disabled={feed.loading} onClick={feed.reload}>
+              Try again
+            </button>
+          </div>
+        )}
         {feed.posts.map((post) => (
           <PostCard key={post.id} post={post} />
         ))}
-        {!feed.loading && feed.posts.length === 0 && !feed.error && <p className="muted">No blog posts yet.</p>}
+        {!feed.loading && feed.posts.length === 0 && !feed.error && (
+          <div className="card">
+            <p>No posts yet.</p>
+            <p className="muted">
+              Notes from building on a $0 budget land here. Meanwhile,{" "}
+              <Link to="/community">see what the community is sharing</Link>.
+            </p>
+          </div>
+        )}
         {feed.nextBefore && (
           <button type="button" className="secondary" disabled={feed.loading} onClick={feed.loadMore}>
             Load more
@@ -56,14 +72,20 @@ export function SiteSearch() {
 
   return (
     <section className="card">
-      <h3>Search the site by meaning</h3>
+      <h2 className="h3">Search the site by meaning</h2>
       <form className="row" onSubmit={search}>
-        <input value={query} maxLength={200} placeholder="e.g. photos of the ocean" onChange={(e) => setQuery(e.target.value)} />
+        <input
+          value={query}
+          maxLength={200}
+          placeholder="e.g. photos of the ocean"
+          aria-label="Search the site by meaning"
+          onChange={(e) => setQuery(e.target.value)}
+        />
         <button type="submit" disabled={busy || query.trim().length < 2}>
           {busy ? "Searching…" : "Search"}
         </button>
       </form>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       {results && results.length === 0 && <p className="muted">Nothing close yet.</p>}
       {results && results.length > 0 && (
         <div className="stack">

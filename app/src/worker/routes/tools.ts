@@ -2,8 +2,8 @@ import { Hono } from "hono";
 import type { AppEnv } from "../env";
 import type { LinkPreview } from "../../shared/types";
 import { track } from "../lib/analytics";
-import { enforceLimit } from "../lib/guards";
-import { clientIp, country, fail, readBody, requireUser, sha256Hex } from "../lib/http";
+import { enforceLimit, spendDaily } from "../lib/guards";
+import { country, fail, rateKey, readBody, requireUser, sha256Hex } from "../lib/http";
 import { fetchPreview, parsePublicUrl } from "../lib/preview";
 
 export const tools = new Hono<AppEnv>();
@@ -85,7 +85,10 @@ tools.get("/random", async (c) => {
   });
 });
 
-/** Open Graph link previews, cached in KV for a week (KV allows 1,000 writes a day). */
+/**
+ * Open Graph link previews, cached in KV for a week. KV allows 1,000 writes a day,
+ * so caching stops after 500 a day and later previews are simply fetched fresh.
+ */
 tools.post("/preview", async (c) => {
   const body = await readBody(c);
   const target = parsePublicUrl(body.url);
@@ -93,9 +96,15 @@ tools.post("/preview", async (c) => {
   const cached = await c.env.KV.get<LinkPreview>(cacheKey, "json");
   if (cached) return c.json({ preview: cached, cached: true });
 
-  await enforceLimit(c.env.WRITE_LIMITER, `preview:${clientIp(c)}`);
+  await enforceLimit(c.env.WRITE_LIMITER, `preview:${rateKey(c)}`);
   const preview = await fetchPreview(target);
-  await c.env.KV.put(cacheKey, JSON.stringify(preview), { expirationTtl: 60 * 60 * 24 * 7 });
+  if (await spendDaily(c.env, "kv_budget", "writes", 1, 500)) {
+    c.executionCtx.waitUntil(
+      c.env.KV.put(cacheKey, JSON.stringify(preview), { expirationTtl: 60 * 60 * 24 * 7 }).catch((error) =>
+        console.warn("preview not cached", error),
+      ),
+    );
+  }
   track(c.env, "link_preview", { country: country(c) });
   return c.json({ preview, cached: false });
 });
@@ -115,7 +124,16 @@ tools.post("/screenshot", async (c) => {
       gotoOptions: { waitUntil: "networkidle2", timeout: 15000 },
       screenshotOptions: { type: "webp", quality: 70 },
     });
-    if (response.status === 429) fail(429, "Today's free browser minutes are used up; try again tomorrow");
+    if (response.status === 429) {
+      // Free plans get 10 browser minutes a day and one Quick Action every 10 seconds; the body says which ran out.
+      const detail = await response.text();
+      fail(
+        429,
+        /exceeded for today/i.test(detail)
+          ? "Today's free browser minutes are used up; try again tomorrow"
+          : "Screenshots run one at a time on the free plan; try again in 10 seconds",
+      );
+    }
     if (!response.ok) fail(502, "The screenshot failed");
     await c.env.MEDIA.put(key, await response.arrayBuffer(), { httpMetadata: { contentType: "image/webp" } });
     track(c.env, "screenshot", { userId: user.id, value: Number(response.headers.get("x-browser-ms-used")) || 0 });

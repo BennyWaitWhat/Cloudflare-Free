@@ -9,13 +9,21 @@
   --accent: #c2410c;
   --accent-strong: #9a3412;
   --accent-soft: #fde7d9;
+  /* Text on an --accent background. */
+  --on-accent: #ffffff;
   --danger: #b42318;
+  --field-border: #8f8174;
   --live: #15803d;
   --setup: #2563eb;
   --card: #7c3aed;
   --domain: #c2410c;
   --planned: #a8a29e;
   --skipped: #d6d3d1;
+  /* Badge text in each status color, dark enough to read on its tint. */
+  --live-ink: #166534;
+  --setup-ink: #1d4ed8;
+  --card-ink: #6d28d9;
+  --domain-ink: #9a3412;
   --radius: 14px;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 4px 16px rgb(0 0 0 / 0.04);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -35,9 +43,15 @@
     --accent: #fb923c;
     --accent-strong: #fdba74;
     --accent-soft: #3a2316;
+    --on-accent: #1f1a17;
     --danger: #f87171;
+    --field-border: #7d746d;
     --planned: #78716c;
     --skipped: #44403c;
+    --live-ink: #4ade80;
+    --setup-ink: #93c5fd;
+    --card-ink: #c4b5fd;
+    --domain-ink: #fdba74;
   }
 }
 
@@ -62,14 +76,22 @@ h2,
 h3 {
   line-height: 1.2;
   margin: 0 0 0.5rem;
+  text-wrap: balance;
 }
 
 h2 {
   margin-top: 2rem;
 }
 
+/* A card title that is an h2 in the outline but looks like an h3. */
+h2.h3 {
+  font-size: 1.17rem;
+  margin-top: 0;
+}
+
 p {
   margin: 0 0 0.75rem;
+  text-wrap: pretty;
 }
 
 code,
@@ -81,6 +103,23 @@ pre {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* Hidden above the page until a keyboard user tabs to it. */
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 20;
+  padding: 0.55rem 1rem;
+  border-radius: 10px;
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+.skip-link:focus {
+  top: 0.75rem;
 }
 
 .topbar {
@@ -143,12 +182,20 @@ pre {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  /* The skip link jumps here; this keeps the page from sliding under the sticky top bar. */
+  scroll-margin-top: 8rem;
+}
+
+/* Focus moves here on every page change, for screen readers; no ring around the whole page. */
+.content:focus {
+  outline: none;
 }
 
 .footer {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
+  align-items: center;
   gap: 0.5rem;
   padding: 1rem clamp(1rem, 4vw, 2rem);
   border-top: 1px solid var(--border);
@@ -156,13 +203,64 @@ pre {
   font-size: 0.85rem;
 }
 
+/* viewport-fit=cover lets the page run edge to edge on phones, so keep clear of notches and rounded corners. */
+.topbar,
+.content,
+.footer {
+  padding-left: max(clamp(1rem, 4vw, 2rem), env(safe-area-inset-left));
+  padding-right: max(clamp(1rem, 4vw, 2rem), env(safe-area-inset-right));
+}
+
+.footer {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
 .hero {
+  display: grid;
+  gap: 2rem;
   padding: clamp(1.5rem, 6vw, 3.5rem) 0 1rem;
 }
 
 .hero h1 {
   font-size: clamp(2rem, 5vw, 3.25rem);
   max-width: 18ch;
+}
+
+.hero-score {
+  padding: 1.5rem;
+}
+
+.hero-number {
+  margin: 0 0 0.35rem;
+  font-size: clamp(3.5rem, 8vw, 5.5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  color: var(--accent);
+}
+
+.hero-number span {
+  font-size: 0.42em;
+  color: var(--muted);
+}
+
+.latest .post-image {
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  height: auto;
+}
+
+@media (min-width: 900px) {
+  .hero {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 3rem;
+    align-items: center;
+  }
+
+  .latest .stack {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .eyebrow {
@@ -205,6 +303,30 @@ pre {
   margin-bottom: 0.3rem;
 }
 
+.tile :is(h2, h3)::after {
+  content: "\2009\2192";
+  /* The arrow is decoration, so screen readers skip it where this syntax works. */
+  content: "\2009\2192" / "";
+  color: var(--accent);
+}
+
+/* How it works cards: the diagram's thumbnail fills the top of the card, edge to edge. */
+.diagram-tile {
+  overflow: hidden;
+}
+
+.diagram-tile .thumb {
+  display: block;
+  width: calc(100% + 2.5rem);
+  max-width: none;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  margin: -1.1rem -1.25rem 0.9rem;
+  object-fit: contain;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+
 .grid {
   display: grid;
   gap: 1rem;
@@ -212,6 +334,11 @@ pre {
 
 .grid.two {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+}
+
+/* Cards keep their own height instead of stretching to match the row. */
+.grid.two.top {
+  align-items: start;
 }
 
 .columns {
@@ -245,6 +372,10 @@ pre {
   min-width: 10rem;
 }
 
+.row > p {
+  margin: 0;
+}
+
 .form {
   display: flex;
   flex-direction: column;
@@ -265,9 +396,21 @@ select {
   font: inherit;
   color: inherit;
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: 1px solid var(--field-border);
   border-radius: 10px;
   padding: 0.55rem 0.7rem;
+}
+
+input[type="file"]::file-selector-button {
+  font: inherit;
+  font-weight: 600;
+  margin-right: 0.75rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
 }
 
 input:focus,
@@ -285,7 +428,7 @@ button,
   font-weight: 600;
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-radius: 10px;
   padding: 0.55rem 1rem;
   cursor: pointer;
@@ -357,26 +500,40 @@ button:disabled {
 
 .badge.status-live {
   background: color-mix(in srgb, var(--live) 15%, transparent);
-  color: var(--live);
+  color: var(--live-ink);
 }
 
 .badge.status-setup {
   background: color-mix(in srgb, var(--setup) 15%, transparent);
-  color: var(--setup);
+  color: var(--setup-ink);
 }
 
 .badge.status-card {
   background: color-mix(in srgb, var(--card) 15%, transparent);
-  color: var(--card);
+  color: var(--card-ink);
 }
 
 .badge.status-domain {
   background: color-mix(in srgb, var(--domain) 15%, transparent);
-  color: var(--domain);
+  color: var(--domain-ink);
+}
+
+.badge.status-planned {
+  background: var(--surface-2);
+}
+
+.badge.status-skipped {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+/* A scoreboard row's badges stay on one line. */
+.badges {
+  white-space: nowrap;
 }
 
 .badge.pending {
-  color: var(--setup);
+  color: var(--setup-ink);
 }
 
 .badge.rejected {
@@ -522,6 +679,21 @@ button:disabled {
   top: 4.5rem;
 }
 
+/* Below 860px the chat drops under the posts, so Community offers a shortcut to it. */
+.jump-chat {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .jump-chat {
+    display: inline-block;
+  }
+}
+
+#chat {
+  scroll-margin-top: 8rem;
+}
+
 .chat-head {
   display: flex;
   justify-content: space-between;
@@ -543,6 +715,20 @@ button:disabled {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0.75rem;
+}
+
+/* Older lines fade out under the top edge instead of being cut off. The fade sits in the top
+   padding, so nothing is faded until the log scrolls, and the box's border stays visible. */
+.chat-log::before {
+  content: "";
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: block;
+  height: 0.75rem;
+  margin: -0.75rem -0.75rem 0;
+  background: linear-gradient(var(--bg), transparent);
+  pointer-events: none;
 }
 
 .chat-log.short {
@@ -573,6 +759,18 @@ button:disabled {
   margin-top: 0.75rem;
   border-radius: 10px;
   width: 100%;
+}
+
+/* Holds the generated image's place until one is drawn. */
+.placeholder {
+  margin-top: 0.75rem;
+  height: 220px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--muted);
 }
 
 .preview {
@@ -622,7 +820,7 @@ button:disabled {
   height: 2.5rem;
   border-radius: 10px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 1.4rem;
   font-weight: 700;
   margin: 0.5rem 0.5rem 0.5rem 0;
@@ -635,11 +833,18 @@ button:disabled {
 @media (max-width: 640px) {
   .topbar {
     flex-wrap: wrap;
+    padding-block: 0.5rem;
+    row-gap: 0.35rem;
   }
 
+  /* The nav scrolls sideways under the page edges, which fade to hint at the links out of view. */
   .nav {
     order: 3;
     flex-basis: 100%;
+    margin-inline: -12px;
+    padding-inline: 12px;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 20px, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 20px, #000 calc(100% - 28px), transparent);
   }
 
   .account-link {

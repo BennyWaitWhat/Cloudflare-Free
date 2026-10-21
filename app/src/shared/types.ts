@@ -46,6 +46,9 @@ export type ChatEvent =
   | { type: "presence"; online: number }
   | { type: "error"; message: string };
 
+/** WebSocket close code a chat room sends to a member's oldest tab when they open one too many. */
+export const CHAT_TAB_REPLACED = 4001;
+
 export const CHAT_ROOMS = ["lobby", "showcase", "help", "off-topic"] as const;
 export type ChatRoomName = (typeof CHAT_ROOMS)[number];
 

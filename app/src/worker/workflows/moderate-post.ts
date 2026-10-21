@@ -1,8 +1,9 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 import type { Bindings } from "../env";
-import { aiOptions, embed, MODELS, moderate } from "../lib/ai";
+import { aiOptions, MODELS, moderate, runsOnlyOnCloudflare } from "../lib/ai";
 import { track } from "../lib/analytics";
+import { indexForSearch } from "../lib/posts";
 
 export interface ModerateParams {
   postId: string;
@@ -23,9 +24,11 @@ const RETRY = {
 };
 
 /**
- * Every new post runs through this Workflow: AI safety check, alt text for
- * its photo, a search embedding, then publish. About 5 steps per post against
- * the free 3,000 steps a day.
+ * Every new post runs through this Workflow: alt text for its photo, an AI
+ * safety check of the title, body and photo description together, a search
+ * embedding, then publish. About 5 steps per post against the free 3,000
+ * steps a day. Reject and publish only change a post that is still pending,
+ * so a decision the owner made on the Admin page always stands.
  */
 export class ModeratePostWorkflow extends WorkflowEntrypoint<Bindings, ModerateParams> {
   async run(event: WorkflowEvent<ModerateParams>, step: WorkflowStep) {
@@ -37,30 +40,51 @@ export class ModeratePostWorkflow extends WorkflowEntrypoint<Bindings, ModerateP
       return row;
     });
 
+    const imageKey = post.image_key;
+    const altText = imageKey ? await step.do("describe photo", RETRY, () => this.describePhoto(imageKey)) : null;
     const text = [post.title, post.body].filter(Boolean).join("\n\n");
-    const verdict = await step.do("check safety", RETRY, () => moderate(this.env, text));
+    const screened = altText ? `${text}\n\nPhoto: ${altText}` : text;
+
+    // Workers AI only runs on Cloudflare's network, so local dev publishes without the check.
+    const verdict = await step.do("check safety", RETRY, async () => {
+      try {
+        return { ...(await moderate(this.env, screened)), skipped: false };
+      } catch (error) {
+        if (runsOnlyOnCloudflare(error)) return { safe: true, categories: [] as string[], skipped: true };
+        throw error;
+      }
+    });
     if (!verdict.safe) {
       await step.do("reject post", async () => {
-        await this.env.DB.prepare("UPDATE posts SET status = 'rejected', moderation_note = ? WHERE id = ?")
+        await this.env.DB.prepare("UPDATE posts SET status = 'rejected', moderation_note = ? WHERE id = ? AND status = 'pending'")
           .bind(`Flagged by the safety model (${verdict.categories.join(", ") || "unsafe"})`, post.id)
           .run();
       });
       return { status: "rejected" };
     }
 
-    const imageKey = post.image_key;
-    const altText = imageKey ? await step.do("describe photo", RETRY, () => this.describePhoto(imageKey)) : null;
-    const indexed = await step.do("index for search", RETRY, () => this.index(post.id, post.kind, text));
+    // A photo the vision model couldn't describe was never really checked, so the owner decides.
+    if (imageKey && !altText && !verdict.skipped) {
+      await step.do("hold for review", async () => {
+        await this.env.DB.prepare("UPDATE posts SET moderation_note = ? WHERE id = ? AND status = 'pending'")
+          .bind("The photo could not be checked; the site owner can publish it from the Admin page", post.id)
+          .run();
+      });
+      return { status: "pending" };
+    }
 
-    await step.do("publish post", async () => {
-      await this.env.DB.prepare(
-        "UPDATE posts SET status = 'published', published_at = unixepoch(), image_alt = COALESCE(?, image_alt) WHERE id = ?",
+    const indexed = await step.do("index for search", RETRY, () => indexForSearch(this.env, post.id, post.kind, text));
+
+    const published = await step.do("publish post", async () => {
+      const { meta } = await this.env.DB.prepare(
+        "UPDATE posts SET status = 'published', published_at = unixepoch(), image_alt = COALESCE(?, image_alt), moderation_note = ? WHERE id = ? AND status = 'pending'",
       )
-        .bind(altText, post.id)
+        .bind(altText, verdict.skipped ? "Published without AI checks (local dev)" : null, post.id)
         .run();
-      track(this.env, "post_published", { detail: post.kind, userId: post.author_id });
+      if (meta.changes > 0) track(this.env, "post_published", { detail: post.kind, userId: post.author_id });
+      return meta.changes > 0;
     });
-    return { status: "published", indexed };
+    return { status: published ? "published" : "decided by the owner", indexed };
   }
 
   /** Alt text from a vision model, fed a 640px JPEG (the same size the feed uses). */
@@ -79,18 +103,6 @@ export class ModeratePostWorkflow extends WorkflowEntrypoint<Bindings, ModerateP
     } catch (error) {
       console.warn("alt text unavailable", error);
       return null;
-    }
-  }
-
-  /** Returns false when the Vectorize index hasn't been created yet. */
-  private async index(id: string, kind: string, text: string): Promise<boolean> {
-    try {
-      const [values] = await embed(this.env, [text.slice(0, 2000)]);
-      await this.env.SEARCH_INDEX.upsert([{ id, values, metadata: { kind } }]);
-      return true;
-    } catch (error) {
-      console.warn("search indexing skipped", error);
-      return false;
     }
   }
 }

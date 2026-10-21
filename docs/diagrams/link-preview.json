@@ -281,8 +281,8 @@
       "dot": "amber",
       "title": "Free allowances",
       "items": [
-        "KV allows 1,000 writes a day; a link is written only on a cache miss and kept for 7 days",
-        "Browser Run allows 10 minutes a day, so a screenshot is rate limited (AI_LIMITER, 6 a minute) and kept in R2"
+        "KV allows 1,000 writes a day; a link is written only on a cache miss and kept for 7 days, and new cards stop being cached after 500 writes in a day",
+        "Browser Run allows 10 minutes a day and one screenshot every 10 seconds, so screenshots are members-only, limited to 6 a minute each, and kept in R2"
       ]
     }
   ]

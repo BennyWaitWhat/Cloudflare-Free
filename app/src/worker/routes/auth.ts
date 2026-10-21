@@ -11,7 +11,7 @@ import type { AppEnv } from "../env";
 import { track } from "../lib/analytics";
 import { fromBase64Url, toBase64Url } from "../lib/encoding";
 import { enforceLimit, verifyTurnstile } from "../lib/guards";
-import { clientIp, country, fail, readBody, requiredText } from "../lib/http";
+import { clientIp, country, fail, rateKey, readBody, requiredText } from "../lib/http";
 import { endSession, saveChallenge, startSession, takeChallenge, toSessionUser } from "../lib/session";
 
 // Passkeys (WebAuthn): verifying a signature is cheap enough for the Free
@@ -55,9 +55,8 @@ auth.post("/register/options", async (c) => {
   const username = requiredText(body.username, "Username", 3, 24).toLowerCase();
   if (!USERNAME.test(username)) fail(400, "Usernames use 3-24 characters: a-z, 0-9 and _");
   const displayName = requiredText(body.displayName || username, "Display name", 1, 40);
-  const ip = clientIp(c);
-  await enforceLimit(c.env.WRITE_LIMITER, `register:${ip}`);
-  await verifyTurnstile(c.env, body.turnstileToken, ip);
+  await enforceLimit(c.env.WRITE_LIMITER, `register:${rateKey(c)}`);
+  await verifyTurnstile(c.env, body.turnstileToken, clientIp(c));
 
   const taken = await c.env.DB.prepare("SELECT 1 FROM users WHERE username = ?").bind(username).first();
   if (taken) fail(409, "That username is taken");
@@ -138,7 +137,7 @@ auth.post("/register/verify", async (c) => {
 });
 
 auth.post("/login/options", async (c) => {
-  await enforceLimit(c.env.WRITE_LIMITER, `login:${clientIp(c)}`);
+  await enforceLimit(c.env.WRITE_LIMITER, `login:${rateKey(c)}`);
   const options = await generateAuthenticationOptions({
     rpID: relyingParty(c).rpID,
     userVerification: "preferred",

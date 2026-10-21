@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import type { AppEnv, JobMessage } from "../env";
 import { track } from "../lib/analytics";
 import { enforceLimit, verifyTurnstile } from "../lib/guards";
-import { clientIp, country, fail, readBody, requiredText } from "../lib/http";
+import { clientIp, country, fail, rateKey, readBody, requiredText } from "../lib/http";
 
 export const contact = new Hono<AppEnv>();
 
@@ -15,9 +15,8 @@ contact.post("/", async (c) => {
   const email = requiredText(body.email, "Email", 3, 254);
   if (!EMAIL.test(email)) fail(400, "Enter a valid email address");
   const message = requiredText(body.message, "Message", 5, 4000);
-  const ip = clientIp(c);
-  await enforceLimit(c.env.WRITE_LIMITER, `contact:${ip}`);
-  await verifyTurnstile(c.env, body.turnstileToken, ip);
+  await enforceLimit(c.env.WRITE_LIMITER, `contact:${rateKey(c)}`);
+  await verifyTurnstile(c.env, body.turnstileToken, clientIp(c));
 
   const job: JobMessage = {
     type: "contact",

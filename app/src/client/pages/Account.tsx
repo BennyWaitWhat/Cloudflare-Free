@@ -40,6 +40,9 @@ function Profile({ user }: { user: SessionUser }) {
           @{user.username}
           {user.isAdmin ? " · site owner" : ""}
         </p>
+        <p className="muted">
+          Member id: <code>{user.id}</code>
+        </p>
         <button type="button" className="secondary" onClick={signOut}>
           Sign out
         </button>
@@ -106,16 +109,16 @@ function SignIn() {
           This site uses passkeys: your device signs in with a fingerprint, face or PIN, and there's no password to leak.
         </p>
       </header>
-      {!supported && <p className="error">This browser doesn't support passkeys.</p>}
-      <div className="grid two">
+      {!supported && <p className="error" role="alert">This browser doesn't support passkeys.</p>}
+      <div className="grid two top">
         <section className="card">
-          <h3>I have an account</h3>
+          <h2 className="h3">I have an account</h2>
           <button type="button" disabled={busy || !supported} onClick={signIn}>
             Sign in with a passkey
           </button>
         </section>
         <form className="card form" onSubmit={register}>
-          <h3>Create an account</h3>
+          <h2 className="h3">Create an account</h2>
           <label>
             Username
             <input
@@ -123,12 +126,15 @@ function SignIn() {
               pattern="[a-z0-9_]{3,24}"
               title="3-24 characters: a-z, 0-9 and _"
               required
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
               onChange={(e) => setUsername(e.target.value.toLowerCase())}
             />
           </label>
           <label>
             Display name
-            <input value={displayName} maxLength={40} onChange={(e) => setDisplayName(e.target.value)} />
+            <input value={displayName} maxLength={40} autoComplete="nickname" onChange={(e) => setDisplayName(e.target.value)} />
           </label>
           <Turnstile onToken={setToken} resetKey={round} />
           <button type="submit" disabled={busy || !supported || !token}>
@@ -136,7 +142,7 @@ function SignIn() {
           </button>
         </form>
       </div>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
     </>
   );
 }

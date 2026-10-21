@@ -17,15 +17,17 @@ export interface UserRow {
   display_name: string;
 }
 
+/** Admin goes by member id, which nobody can pick, rather than by a username anyone could sign up with first. */
 export function toSessionUser(env: Bindings, row: UserRow): SessionUser {
-  const admins = env.ADMIN_USERNAMES.split(",")
-    .map((name) => name.trim().toLowerCase())
+  const admins = (env.ADMIN_USER_IDS ?? "")
+    .split(",")
+    .map((id) => id.trim())
     .filter(Boolean);
   return {
     id: row.id,
     username: row.username,
     displayName: row.display_name,
-    isAdmin: admins.includes(row.username.toLowerCase()),
+    isAdmin: admins.includes(row.id),
   };
 }
 

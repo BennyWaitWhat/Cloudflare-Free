@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../env";
 import { fail, readBody, requireAdmin } from "../lib/http";
-import { POST_SELECT, toPublicPost, type PostRow } from "../lib/posts";
+import { indexForSearch, POST_SELECT, toPublicPost, type PostRow } from "../lib/posts";
 
 // Owner-only views. Once the domain is on Cloudflare, Access can add a second login wall here.
 export const admin = new Hono<AppEnv>();
@@ -42,12 +42,18 @@ admin.post("/posts/:id/status", async (c) => {
   const body = await readBody(c);
   const status = body.status;
   if (status !== "published" && status !== "rejected") fail(400, "Status must be published or rejected");
-  const result = await c.env.DB.prepare(
-    "UPDATE posts SET status = ?, published_at = CASE WHEN ? = 'published' THEN unixepoch() ELSE published_at END, moderation_note = ? WHERE id = ?",
+  const id = c.req.param("id");
+  const row = await c.env.DB.prepare(
+    "UPDATE posts SET status = ?, published_at = CASE WHEN ? = 'published' THEN unixepoch() ELSE published_at END, moderation_note = ? WHERE id = ? RETURNING kind, title, body",
   )
-    .bind(status, status, status === "rejected" ? "Rejected by the site owner" : null, c.req.param("id"))
-    .run();
-  if (result.meta.changes === 0) fail(404, "Post not found");
+    .bind(status, status, status === "rejected" ? "Rejected by the site owner" : null, id)
+    .first<{ kind: string; title: string | null; body: string }>();
+  if (!row) fail(404, "Post not found");
+  // A post the owner publishes by hand never reached the Workflow's search step, so index it here.
+  if (status === "published") {
+    const text = [row.title, row.body].filter(Boolean).join("\n\n");
+    c.executionCtx.waitUntil(indexForSearch(c.env, id, row.kind, text));
+  }
   return c.json({ ok: true });
 });
 

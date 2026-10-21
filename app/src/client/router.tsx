@@ -1,4 +1,4 @@
-import { useSyncExternalStore, type MouseEvent, type ReactNode } from "react";
+import { useSyncExternalStore, type AnchorHTMLAttributes, type MouseEvent } from "react";
 
 // A tiny History API router: the app has a handful of top-level pages.
 const listeners = new Set<() => void>();
@@ -23,14 +23,18 @@ export function usePath(): string {
   return useSyncExternalStore(subscribe, () => location.pathname);
 }
 
-export function Link({ to, className, children }: { to: string; className?: string; children: ReactNode }) {
-  const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
+type LinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> & { to: string };
+
+/** An in-app link; other anchor attributes, such as aria-current, pass through to the <a>. */
+export function Link({ to, onClick, children, ...rest }: LinkProps) {
+  const follow = (event: MouseEvent<HTMLAnchorElement>) => {
+    onClick?.(event);
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     navigate(to);
   };
   return (
-    <a href={to} className={className} onClick={onClick}>
+    <a {...rest} href={to} onClick={follow}>
       {children}
     </a>
   );

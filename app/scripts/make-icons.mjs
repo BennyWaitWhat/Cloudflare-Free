@@ -16,7 +16,7 @@ function roundedBox(x, y, cx, cy, halfWidth, halfHeight, radius) {
 
 function cloud(x, y) {
   return Math.min(
-    circle(x, y, 0.36, 0.56, 0.17),
+    circle(x, y, 0.36, 0.55, 0.17),
     circle(x, y, 0.52, 0.45, 0.22),
     circle(x, y, 0.68, 0.57, 0.15),
     roundedBox(x, y, 0.52, 0.64, 0.3, 0.08, 0.08),
@@ -97,4 +97,6 @@ mkdirSync(out, { recursive: true });
 writeFileSync(new URL("icon-192.png", out), draw(192, { maskable: false }));
 writeFileSync(new URL("icon-512.png", out), draw(512, { maskable: false }));
 writeFileSync(new URL("maskable-512.png", out), draw(512, { maskable: true }));
-console.log("Wrote public/icons/icon-192.png, icon-512.png and maskable-512.png");
+// iOS fills transparent corners with black, so its home-screen icon gets the opaque maskable drawing.
+writeFileSync(new URL("apple-touch-icon.png", out), draw(180, { maskable: true }));
+console.log("Wrote public/icons/icon-192.png, icon-512.png, maskable-512.png and apple-touch-icon.png");

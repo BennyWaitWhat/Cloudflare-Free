@@ -5,7 +5,7 @@
 <p><strong>One diagram for each piece of Cloudflare Free:<br>what runs where, in what order, and which free product does each job.</strong></p>
 
 <p>
-  <a href="#the-big-picture">The big picture</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="#members-and-posts">Members and posts</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="#chat-and-ai">Chat and AI</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="#messages-and-numbers">Messages and numbers</a>
+  <a href="#the-big-picture">The&nbsp;big&nbsp;picture</a>&nbsp;&nbsp;·&nbsp; <a href="#members-and-posts">Members&nbsp;and&nbsp;posts</a>&nbsp;&nbsp;·&nbsp; <a href="#chat-and-ai">Chat&nbsp;and&nbsp;AI</a>&nbsp;&nbsp;·&nbsp; <a href="#messages-and-numbers">Messages&nbsp;and&nbsp;numbers</a>
 </p>
 
 </div>
@@ -62,7 +62,7 @@ Sign-up passes Turnstile and a rate limit, then the Worker sends a one-time WebA
   <img src="images/diagrams/photos-light.webp" alt="Sequence diagram: a photo upload into R2, then a resized copy served through the Images binding and the edge cache">
 </picture>
 
-An upload of up to 8 MB goes straight into R2, and a row in D1 records who owns it. Photos are served from `/img/` at 320, 640 or 1280 px: on a cache miss the Worker reads the original from R2, the Images binding resizes it to AVIF, WebP or JPEG, and the Cache API keeps the result. That caps each photo at 3 of the 5,000 free transformations a month, and if a resize fails the original is served.
+An upload of up to 8 MB goes into R2 once the Images binding confirms it really is an image, and a row in D1 records who owns it. Each member can upload 20 photos or 50 MB a day. Photos are served from `/img/` at 320, 640 or 1280 px: on a cache miss the Worker reads the original from R2, the Images binding resizes it to AVIF, WebP or JPEG, and the Cache API keeps the result for an hour. That caps each photo at 3 of the 5,000 free transformations a month, and if a resize fails the original is served. Because cached copies last only an hour, a rejected post's photo soon stops being served, and its `/img/` address returns 404.
 
 - **Free products:** R2, Images, Cache API, D1, Rate Limiting
 - **Code:** [`routes/media.ts`](../app/src/worker/routes/media.ts), [`components/Composer.tsx`](../app/src/client/components/Composer.tsx)
@@ -72,10 +72,10 @@ An upload of up to 8 MB goes straight into R2, and a row in D1 records who owns 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/posting-dark.webp">
-  <img src="images/diagrams/posting-light.webp" alt="Workflow diagram: a photo is saved to R2, the post is checked and saved as pending, then the moderation Workflow checks its safety, describes the photo, indexes it and publishes or rejects it">
+  <img src="images/diagrams/posting-light.webp" alt="Workflow diagram: a photo is saved to R2, the post is checked and saved as pending, then the moderation Workflow describes the photo, checks the text and description for safety, indexes the post and publishes it, rejects it or holds it for the owner">
 </picture>
 
-The photo goes into R2 first. The post then passes a rate limit, Turnstile and a check that the photo is the member's own, is saved as pending in D1, and gets an answer at once. The moderation Workflow checks it with Llama Guard: an unsafe post is rejected, and a safe one gets alt text and a search entry before it is published, while the browser checks back every 2 seconds for up to 30.
+The photo goes into R2 first. The post then passes a rate limit, Turnstile and a check that the photo is the member's own, is saved as pending in D1, and gets an answer at once. The moderation Workflow first has a vision model describe the photo, then Llama Guard checks the text and that description together: an unsafe post is rejected, a photo that can't be described waits for the owner, and a safe post gets its alt text and a search entry before it is published, while the browser checks back every 2 seconds for up to 30.
 
 - **Free products:** Workflows, Workers AI, Vectorize, R2, D1, Images, Turnstile, Rate Limiting
 - **Code:** [`routes/posts.ts`](../app/src/worker/routes/posts.ts), [`workflows/moderate-post.ts`](../app/src/worker/workflows/moderate-post.ts), [`components/Composer.tsx`](../app/src/client/components/Composer.tsx)
@@ -85,10 +85,10 @@ The photo goes into R2 first. The post then passes a rate limit, Turnstile and a
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/post-lifecycle-dark.webp">
-  <img src="images/diagrams/post-lifecycle-light.webp" alt="Lifecycle diagram: a post moves from pending through the safety check to published or rejected, or waits for the site owner">
+  <img src="images/diagrams/post-lifecycle-light.webp" alt="Lifecycle diagram: a post moves from pending through the photo description and the safety check to published or rejected, or waits for the site owner">
 </picture>
 
-Every post starts as pending; the Workflow loads it and runs the safety check, retrying twice if the check fails. Unsafe posts are rejected, and safe ones get alt text and a search entry, then are published. If the retries run out or the Workflow can't start, the post stays pending until the owner publishes or rejects it on the Admin page.
+Every post starts as pending. The Workflow loads it, has a vision model describe the photo, and runs the safety check on the title, body and description, retrying twice if the check fails. Unsafe posts are rejected; safe ones get a search entry and are published. A photo that can't be described, retries that run out or a Workflow that can't start leave the post pending until the owner publishes or rejects it on the Admin page. The Workflow only changes a post that is still pending, so it never overwrites the owner's decision. In local dev, where Workers AI isn't available, posts are published with the note "Published without AI checks (local dev)".
 
 - **Free products:** Workflows, D1
 - **Code:** [`workflows/moderate-post.ts`](../app/src/worker/workflows/moderate-post.ts), [`routes/admin.ts`](../app/src/worker/routes/admin.ts), [`0001_init.sql`](../app/migrations/0001_init.sql)
@@ -103,7 +103,7 @@ Every post starts as pending; the Workflow loads it and runs the safety check, r
   <img src="images/diagrams/chat-light.webp" alt="Sequence diagram: a WebSocket passes through the Worker to the chat room's Durable Object, which stores and broadcasts messages">
 </picture>
 
-The Worker reads the session and hands the WebSocket to the room's Durable Object, along with who is connecting. The room sends the last 50 messages, saves new ones in its own SQLite database and broadcasts them to everyone online. Thanks to WebSocket Hibernation, a quiet room leaves memory, and heartbeat pings are answered without waking it.
+The Worker reads the session and hands the WebSocket to the room's Durable Object, along with who is connecting. The room sends the last 50 messages, saves new ones in its own SQLite database and broadcasts them to everyone online. Each member can send one message a second, counted across all their tabs, and keep up to 3 tabs open in a room, where opening a 4th closes the oldest. Thanks to WebSocket Hibernation, a quiet room leaves memory, and heartbeat pings are answered without waking it.
 
 - **Free products:** Durable Objects (SQLite storage, WebSocket Hibernation), Workers
 - **Code:** [`routes/chat.ts`](../app/src/worker/routes/chat.ts), [`durable/chat-room.ts`](../app/src/worker/durable/chat-room.ts), [`components/ChatPanel.tsx`](../app/src/client/components/ChatPanel.tsx)
@@ -116,7 +116,7 @@ The Worker reads the session and hands the WebSocket to the room's Durable Objec
   <img src="images/diagrams/assistant-light.webp" alt="Sequence diagram: a question is embedded, matched against posts in Vectorize and D1, and answered by a streamed Workers AI reply">
 </picture>
 
-Each question passes a per-visitor limit, then bge-small turns it into a vector, Vectorize finds the three closest posts, and D1 supplies their text. The Worker adds those posts and the product list to the prompt, and GLM-4.7 Flash streams the answer back as plain text. Every model call shares the free 10,000 Neurons a day; when they run out, the Worker says so until midnight UTC.
+Each question passes a per-visitor limit, then bge-small turns it into a vector, Vectorize finds the three closest posts, and D1 supplies their text. The Worker adds those posts and the product list to the prompt, and GLM-4.7 Flash streams the answer back as plain text. Every model call shares the free 10,000 Neurons a day, and chat and image generation stop at 6,000 so moderation always has some left; when the budget runs out, the Worker says so until midnight UTC.
 
 - **Free products:** Workers AI, Vectorize, D1, Rate Limiting, AI Gateway (optional)
 - **Code:** [`routes/ai.ts`](../app/src/worker/routes/ai.ts), [`lib/ai.ts`](../app/src/worker/lib/ai.ts), [`pages/Lab.tsx`](../app/src/client/pages/Lab.tsx)
@@ -129,7 +129,7 @@ Each question passes a per-visitor limit, then bge-small turns it into a vector,
   <img src="images/diagrams/lab-tools-light.webp" alt="Architecture diagram: the Lab page calls the Worker, which queries 1.1.1.1, Cloudflare Status and drand, and sends AI calls through a rate limit to Llama Guard, FLUX.1 schnell and toMarkdown">
 </picture>
 
-The public tools need no keys: DNS answers come from 1.1.1.1 over HTTPS, Cloudflare's status is cached for 60 seconds, and dice rolls use a drand round anyone can verify. The AI tools share a limit of 6 calls a minute per visitor; image prompts pass Llama Guard before FLUX.1 schnell draws them. The edge card reads `request.cf` to show which data center answered.
+The public tools need no keys: DNS answers come from 1.1.1.1 over HTTPS, Cloudflare's status is cached for 60 seconds, and dice rolls use a drand round anyone can verify. Each AI tool allows 6 calls a minute per visitor, and all of them share the free 10,000 Neurons a day; image prompts pass Llama Guard before FLUX.1 schnell draws them. The edge card reads `request.cf` to show which data center answered.
 
 - **Free products:** Workers AI, Rate Limiting, 1.1.1.1, Cloudflare Status API, drand
 - **Code:** [`routes/tools.ts`](../app/src/worker/routes/tools.ts), [`routes/ai.ts`](../app/src/worker/routes/ai.ts), [`pages/Lab.tsx`](../app/src/client/pages/Lab.tsx)
@@ -142,7 +142,7 @@ The public tools need no keys: DNS answers come from 1.1.1.1 over HTTPS, Cloudfl
   <img src="images/diagrams/link-preview-light.webp" alt="Workflow diagram: a link passes a guard and a KV lookup, then is fetched, read and cached; members can also get a Browser Run screenshot stored in R2">
 </picture>
 
-Every link first passes a guard that refuses local and private addresses, and a preview already in KV comes back at once. Otherwise, after a rate limit, the Worker reads the page's head with HTMLRewriter and caches the card in KV for a week, so each link is written at most once a week (KV allows 1,000 free writes a day). Signed-in members can also ask for a screenshot: Browser Run captures the page once, R2 keeps it, and `/img/` serves it.
+Every link first passes a guard that refuses local and private addresses, and a preview already in KV comes back at once. Otherwise, after a rate limit, the Worker reads the page's head with HTMLRewriter and caches the card in KV for a week, so each link is written at most once a week. KV allows 1,000 free writes a day, and the site stops caching new cards after 500 in a day. Signed-in members can also ask for a screenshot: Browser Run captures the page once, R2 keeps it, and `/img/` serves it.
 
 - **Free products:** KV, HTMLRewriter, Browser Run, R2, Rate Limiting, Workers
 - **Code:** [`routes/tools.ts`](../app/src/worker/routes/tools.ts), [`lib/preview.ts`](../app/src/worker/lib/preview.ts), [`pages/Lab.tsx`](../app/src/client/pages/Lab.tsx)
@@ -170,7 +170,7 @@ The form passes a rate limit and Turnstile, goes onto a Queue, and the visitor s
   <img src="images/diagrams/email-light.webp" alt="Data flow diagram: mail for the domain goes through Email Routing to the Worker, into D1 and the admin inbox, and contact messages are emailed to the owner">
 </picture>
 
-Email Routing hands mail for the domain to the Worker's `email` handler, which parses it, saves the text in D1 for the admin inbox and forwards a copy to the owner. In the other direction, the contact form's queue consumer emails the owner through the `send_email` binding. Both need the domain on Cloudflare; without it, contact messages are still saved.
+Email Routing hands mail for the domain to the Worker's `email` handler, which forwards it to the owner first, so a failed save never loses mail, then parses it and saves the text in D1 for the admin inbox. In the other direction, the contact form's queue consumer emails the owner through the `send_email` binding. Both need the domain on Cloudflare; without it, contact messages are still saved.
 
 - **Free products:** Email Routing, Email Workers, `send_email`, Queues, D1
 - **Code:** [`handlers.ts`](../app/src/worker/handlers.ts), [`routes/admin.ts`](../app/src/worker/routes/admin.ts), [`pages/Admin.tsx`](../app/src/client/pages/Admin.tsx)

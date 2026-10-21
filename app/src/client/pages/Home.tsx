@@ -8,7 +8,11 @@ import { ScoreBar } from "../components/ScoreBar";
 import { Link } from "../router";
 
 const SECTIONS = [
-  { to: "/scoreboard", title: "Scoreboard", text: "Every free Cloudflare offering, what it allows, and whether this site uses it yet." },
+  {
+    to: "/scoreboard",
+    title: "Scoreboard",
+    text: `${CATALOG.length} free Cloudflare offerings, what each allows, and whether this site uses it yet.`,
+  },
   { to: "/community", title: "Community", text: "Post photos, chat in real time, and watch AI moderation publish your posts." },
   { to: "/lab", title: "Lab", text: "Try Workers AI, Browser Run, DNS over HTTPS, the randomness beacon and more." },
   { to: "/blog", title: "Blog", text: "Notes from building on a $0 budget, with semantic search across every post." },
@@ -27,30 +31,36 @@ export function Home() {
   return (
     <>
       <section className="hero">
-        <p className="eyebrow">The $0 challenge</p>
-        <h1>A website and app built from every free thing Cloudflare offers.</h1>
-        <p className="lead">
-          No servers and no paid plans. {totals.built} of {totals.total} free offerings already have working code here, and
-          the scoreboard tracks the rest.
-        </p>
-        <div className="row">
-          <Link to="/scoreboard" className="button">
-            See the scoreboard
-          </Link>
-          <Link to="/community" className="button secondary">
-            Join the community
-          </Link>
+        <div>
+          <p className="eyebrow">The $0 challenge</p>
+          <h1>A website and app built only from Cloudflare's free tier.</h1>
+          <p className="lead">
+            No servers and no paid plans. {totals.withCode} of {totals.total} free Cloudflare offerings run on code here,{" "}
+            {totals.settings} more are free settings it switches on, and the scoreboard tracks the rest.
+          </p>
+          <div className="row">
+            <Link to="/scoreboard" className="button">
+              See the scoreboard
+            </Link>
+            <Link to="/community" className="button secondary">
+              Join the community
+            </Link>
+          </div>
         </div>
-      </section>
-
-      <section className="card">
-        <ScoreBar score={totals} />
+        <div className="card hero-score">
+          <p className="hero-number">
+            {totals.withCode}
+            <span> / {totals.total}</span>
+          </p>
+          <p className="muted">free Cloudflare offerings run on code here</p>
+          <ScoreBar score={totals} />
+        </div>
       </section>
 
       <section className="grid two">
         {SECTIONS.map((section) => (
           <Link key={section.to} to={section.to} className="card tile">
-            <h3>{section.title}</h3>
+            <h2 className="h3">{section.title}</h2>
             <p className="muted">{section.text}</p>
           </Link>
         ))}
@@ -59,7 +69,7 @@ export function Home() {
       <EdgeCard />
 
       {latest.length > 0 && (
-        <section>
+        <section className="latest">
           <h2>Latest from the community</h2>
           <div className="stack">
             {latest.map((post) => (

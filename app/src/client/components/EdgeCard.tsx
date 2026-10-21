@@ -23,7 +23,7 @@ export function EdgeCard() {
 
   return (
     <section className="card">
-      <h3>Your edge</h3>
+      <h2 className="h3">Your edge</h2>
       {failed && <p className="muted">Couldn't reach the Worker.</p>}
       {!trace && !failed && <p className="muted">Asking the edge…</p>}
       {trace && (

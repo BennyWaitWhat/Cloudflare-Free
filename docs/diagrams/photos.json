@@ -166,7 +166,7 @@
       "from": "worker",
       "to": "browser",
       "y": 550,
-      "label": "image, cache 1 year",
+      "label": "image, cached 1 hour",
       "variant": "return"
     }
   ],
@@ -237,7 +237,8 @@
       "dot": "cyan",
       "title": "Upload once",
       "items": [
-        "Signed-in users send JPEG, PNG, WebP, GIF or AVIF, up to 8 MB",
+        "Signed-in members send JPEG, PNG, WebP, GIF or AVIF, up to 8 MB each and 20 photos or 50 MB a day",
+        "The Images binding checks that each upload really is an image",
         "R2 (10 GB free, free egress) keeps the original; D1 records the owner"
       ]
     },
@@ -253,8 +254,9 @@
       "dot": "violet",
       "title": "Cache first, then fall back",
       "items": [
-        "On a hit the Cache API answers at once (up to a year, no quota)",
-        "If a resize fails (error 9422 past 5,000), the original is served"
+        "On a hit the Cache API answers at once (photos are kept for an hour, no quota)",
+        "If a resize fails (error 9422 past 5,000), the original is served",
+        "Once a post is rejected and its cached copies expire, its photo returns 404"
       ]
     }
   ]

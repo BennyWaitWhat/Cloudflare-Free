@@ -65,8 +65,8 @@
     "guard",
     "pending",
     "load",
-    "safety",
     "describe",
+    "safety",
     "index",
     "publish",
     "poll"
@@ -127,22 +127,22 @@
       "width": 146
     },
     {
-      "id": "safety",
+      "id": "describe",
       "lane": "flow",
       "col": 3,
       "type": "cloud",
-      "label": "check safety",
-      "sublabel": "Llama Guard; retries",
-      "width": 132
+      "label": "describe photo",
+      "sublabel": "vision model, 640 px",
+      "width": 140
     },
     {
-      "id": "describe",
+      "id": "safety",
       "lane": "flow",
       "col": 4,
       "type": "cloud",
-      "label": "describe photo",
-      "sublabel": "640 px; skips on failure",
-      "width": 140
+      "label": "check safety",
+      "sublabel": "Llama Guard: text + photo",
+      "width": 156
     },
     {
       "id": "index",
@@ -154,13 +154,22 @@
       "width": 150
     },
     {
-      "id": "reject",
+      "id": "hold",
       "lane": "result",
       "col": 3,
       "type": "security",
+      "label": "hold for owner",
+      "sublabel": "stays pending, with a note",
+      "width": 156
+    },
+    {
+      "id": "reject",
+      "lane": "result",
+      "col": 4,
+      "type": "security",
       "label": "reject post",
       "sublabel": "unsafe: status rejected",
-      "width": 132
+      "width": 150
     },
     {
       "id": "publish",
@@ -207,15 +216,22 @@
       "role": "async"
     },
     {
-      "id": "to-safety",
+      "id": "to-describe",
       "from": "load",
+      "to": "describe",
+      "variant": "emphasis"
+    },
+    {
+      "id": "to-safety",
+      "from": "describe",
       "to": "safety",
+      "label": "description",
       "variant": "emphasis"
     },
     {
       "id": "is-safe",
       "from": "safety",
-      "to": "describe",
+      "to": "index",
       "label": "safe",
       "variant": "emphasis"
     },
@@ -227,10 +243,12 @@
       "role": "error"
     },
     {
-      "id": "to-index",
-      "from": "describe",
-      "to": "index",
-      "variant": "emphasis"
+      "id": "not-described",
+      "from": "safety",
+      "to": "hold",
+      "label": "photo not described",
+      "variant": "dashed",
+      "role": "branch"
     },
     {
       "id": "to-publish",
@@ -261,8 +279,10 @@
       "dot": "violet",
       "title": "A durable Workflow",
       "items": [
-        "Models: llama-guard-3-8b checks safety, llava-1.5-7b-hf describes the photo, bge-small-en-v1.5 embeds the post",
-        "Those steps retry twice with backoff; photo and search are best effort, so the post still publishes if they fail"
+        "Models: llava-1.5-7b-hf describes the photo, llama-guard-3-8b checks the title, body and that description together, bge-small-en-v1.5 embeds the post",
+        "Those steps retry twice with backoff; a photo that can't be described holds the post for the owner, and search is best effort",
+        "Reject and publish only change a post that is still pending, so the owner's own decision is never overwritten",
+        "Locally, without Workers AI, the post is published with the note 'Published without AI checks (local dev)'"
       ]
     },
     {

@@ -1,4 +1,5 @@
 // Links to the interactive diagrams in public/learn, which are plain HTML files rather than app pages.
+// `npm run diagrams:images` writes the thumbnails in public/diagrams.
 type Kind = "Architecture" | "Sequence" | "Workflow" | "Data flow" | "Lifecycle";
 
 interface Diagram {
@@ -45,7 +46,7 @@ const GROUPS: { title: string; diagrams: Diagram[] }[] = [
         slug: "posting",
         title: "Posting a photo",
         kind: "Workflow",
-        text: "The checks before a post is saved, then the Workflow that screens it, writes alt text and indexes it.",
+        text: "The checks before a post is saved, then the Workflow that describes its photo, screens it and indexes it.",
       },
       {
         slug: "post-lifecycle",
@@ -74,7 +75,7 @@ const GROUPS: { title: string; diagrams: Diagram[] }[] = [
         slug: "lab-tools",
         title: "The Lab's tools",
         kind: "Architecture",
-        text: "DNS lookups, Cloudflare's status, verifiable dice and the AI tools behind one shared limit.",
+        text: "DNS lookups, Cloudflare's status and verifiable dice, plus AI tools limited to 6 calls a minute each.",
       },
       {
         slug: "link-preview",
@@ -125,7 +126,11 @@ export function HowItWorks() {
           <h2>{group.title}</h2>
           <div className="grid two">
             {group.diagrams.map((diagram) => (
-              <a key={diagram.slug} href={`/learn/${diagram.slug}.html`} className="card tile">
+              <a key={diagram.slug} href={`/learn/${diagram.slug}.html`} className="card tile diagram-tile">
+                <picture>
+                  <source media="(prefers-color-scheme: dark)" srcSet={`/diagrams/${diagram.slug}-dark.webp`} />
+                  <img className="thumb" src={`/diagrams/${diagram.slug}-light.webp`} alt="" loading="lazy" decoding="async" />
+                </picture>
                 <p className="eyebrow">{diagram.kind}</p>
                 <h3>{diagram.title}</h3>
                 <p className="muted">{diagram.text}</p>

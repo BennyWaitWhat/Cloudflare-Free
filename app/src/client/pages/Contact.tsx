@@ -40,7 +40,7 @@ export function Contact() {
       </header>
       {sent ? (
         <section className="card">
-          <h3>Thanks, your message is on its way.</h3>
+          <h2 className="h3">Thanks, your message is on its way.</h2>
           <button type="button" className="secondary" onClick={() => setSent(false)}>
             Send another
           </button>
@@ -49,11 +49,18 @@ export function Contact() {
         <form className="card form" onSubmit={submit}>
           <label>
             Name
-            <input value={name} maxLength={80} required onChange={(e) => setName(e.target.value)} />
+            <input value={name} maxLength={80} required autoComplete="name" onChange={(e) => setName(e.target.value)} />
           </label>
           <label>
             Email
-            <input type="email" value={email} maxLength={254} required onChange={(e) => setEmail(e.target.value)} />
+            <input
+              type="email"
+              value={email}
+              maxLength={254}
+              required
+              autoComplete="email"
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </label>
           <label>
             Message
@@ -63,7 +70,7 @@ export function Contact() {
           <button type="submit" disabled={busy || !token}>
             {busy ? "Sending…" : "Send"}
           </button>
-          {error && <p className="error">{error}</p>}
+          {error && <p className="error" role="alert">{error}</p>}
         </form>
       )}
     </>

@@ -5,12 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Cloudflare Free</title>
     <meta name="description" content="A website and installable web app built only from Cloudflare's free tier." />
-    <meta name="theme-color" content="#c2410c" />
+    <meta name="color-scheme" content="light dark" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Cloudflare Free" />
+    <meta property="og:title" content="Cloudflare Free: a website and app built only from Cloudflare's free tier" />
+    <meta property="og:description" content="No servers and no paid plans: Workers, D1, R2, Durable Objects, Workers AI and more in one installable app." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#c2410c" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#141110" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
   </head>
   <body>
+    <noscript>Cloudflare Free needs JavaScript. The diagrams at <a href="/learn/overview.html">/learn/overview.html</a> work without it.</noscript>
     <div id="root"></div>
     <script type="module" src="/src/client/main.tsx"></script>
   </body>

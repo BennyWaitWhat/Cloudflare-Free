@@ -7,8 +7,10 @@ import {
   SELF,
 } from "cloudflare:test";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { handleEmail } from "../src/worker/handlers";
 import worker from "../src/worker/index";
 import type { JobMessage } from "../src/worker/env";
+import { spendDaily } from "../src/worker/lib/guards";
 import { bindings, ORIGIN, postJson, signIn, turnstileFetch } from "./helpers";
 
 beforeAll(async () => {
@@ -24,6 +26,7 @@ describe("site metadata", () => {
     const response = await SELF.fetch(`${ORIGIN}/api/health`);
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ ok: true });
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
   });
 
   it("serves a catalog whose score adds up", async () => {
@@ -40,6 +43,7 @@ describe("site metadata", () => {
     const text = await (await SELF.fetch(`${ORIGIN}/.well-known/security.txt`)).text();
     expect(text).toContain(`Contact: ${ORIGIN}/contact`);
     expect(text).toMatch(/Expires: \d{4}-/);
+    expect(text).toContain("Policy: https://github.com/");
   });
 
   it("answers unknown API routes with JSON", async () => {
@@ -71,6 +75,37 @@ describe("request validation", () => {
     const response = await SELF.fetch(`${ORIGIN}/img/private/secret.png`);
     expect(response.status).toBe(404);
   });
+
+  it("refuses an image dressed up as a document for Markdown", async () => {
+    const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
+    const form = new FormData();
+    form.append("file", new File([jpeg], "x.pdf", { type: "application/pdf" }));
+    const response = await SELF.fetch(new Request(`${ORIGIN}/api/ai/markdown`, { method: "POST", body: form }));
+    expect(response.status).toBe(415);
+  });
+});
+
+describe("daily budgets", () => {
+  it("stops spending once the day's cap is reached", async () => {
+    const spend = () => spendDaily(bindings, "ai_budget", "neurons", 2500, 6000);
+    expect([await spend(), await spend(), await spend()]).toEqual([true, true, false]);
+  });
+
+  it("turns the AI demos away, before any model runs, once the budget is used up", async () => {
+    const day = new Date().toISOString().slice(0, 10);
+    await bindings.DB.prepare("INSERT INTO ai_budget (day, neurons) VALUES (?, 6000) ON CONFLICT(day) DO UPDATE SET neurons = 6000")
+      .bind(day)
+      .run();
+    const budgetGone = { error: "Today's AI demo budget is used up; it resets at midnight UTC" };
+
+    const chat = await SELF.fetch(postJson("/api/ai/chat", { messages: [{ role: "user", content: "What is Pied Piper?" }] }));
+    expect(chat.status).toBe(429);
+    expect(await chat.json()).toEqual(budgetGone);
+    // Workers AI isn't reachable in tests, so a 429 here (not a 503) shows the prompt check never ran.
+    const image = await SELF.fetch(postJson("/api/ai/image", { prompt: "A middle-out compression chart" }));
+    expect(image.status).toBe(429);
+    expect(await image.json()).toEqual(budgetGone);
+  });
 });
 
 describe("passkey sign-in", () => {
@@ -87,10 +122,18 @@ describe("passkey sign-in", () => {
     expect(await response.json()).toMatchObject({ user: { username: "session_check", isAdmin: false } });
   });
 
-  it("grants admin to listed usernames", async () => {
-    const { cookie } = await signIn("owner");
+  it("grants admin to listed member ids", async () => {
+    const { cookie } = await signIn("richard", "test-owner-id");
     const response = await SELF.fetch(`${ORIGIN}/api/admin/overview`, { headers: { cookie } });
     expect(response.status).toBe(200);
+  });
+
+  it("gives no admin rights to whoever signs up as owner", async () => {
+    const { cookie } = await signIn("owner");
+    const me = await SELF.fetch(`${ORIGIN}/api/auth/me`, { headers: { cookie } });
+    expect(await me.json()).toMatchObject({ user: { username: "owner", isAdmin: false } });
+    const response = await SELF.fetch(`${ORIGIN}/api/admin/overview`, { headers: { cookie } });
+    expect(response.status).toBe(403);
   });
 
   it("keeps members out of admin", async () => {
@@ -155,7 +198,7 @@ describe("posting", () => {
     const workflows = await introspectWorkflow(bindings.MODERATE_POST);
     try {
       await workflows.modifyAll(async (modifier) => {
-        await modifier.mockStepResult({ name: "check safety" }, { safe: true, categories: [] });
+        await modifier.mockStepResult({ name: "check safety" }, { safe: true, categories: [], skipped: false });
         await modifier.mockStepResult({ name: "index for search" }, true);
       });
       const { cookie } = await signIn("poster");
@@ -178,5 +221,42 @@ describe("posting", () => {
     const { cookie } = await signIn("not_owner");
     const response = await SELF.fetch(postJson("/api/posts", { kind: "blog", body: "Blog", turnstileToken: "t" }, { cookie }));
     expect(response.status).toBe(403);
+  });
+});
+
+describe("email routing", () => {
+  /** A stand-in for the message Email Routing hands the Worker; it records where it was forwarded. */
+  function inbound(subject: string, rawSize: number) {
+    const forwardedTo: string[] = [];
+    const message = {
+      from: "gavin@hooli.xyz",
+      to: "hello@site.test",
+      rawSize,
+      raw: new Response(`Subject: ${subject}\r\n\r\nNucleus is ready.\r\n`).body,
+      headers: new Headers({ subject }),
+      forward: async (to: string) => {
+        forwardedTo.push(to);
+      },
+    } as unknown as ForwardableEmailMessage;
+    return { message, forwardedTo };
+  }
+
+  it("forwards a large email and files it without parsing it", async () => {
+    const { message, forwardedTo } = inbound("Hooli XYZ", 600 * 1024);
+    await handleEmail(message, { ...bindings, DB: bindings.DB, OWNER_EMAIL: "richard@piedpiper.com" });
+    expect(forwardedTo).toEqual(["richard@piedpiper.com"]);
+    const row = await bindings.DB.prepare("SELECT subject, text_body FROM inbound_emails WHERE from_addr = ?").bind("gavin@hooli.xyz").first();
+    expect(row).toEqual({ subject: "Hooli XYZ", text_body: "(too large to preview; see your inbox)" });
+  });
+
+  it("still forwards when saving the copy fails", async () => {
+    const { message, forwardedTo } = inbound("Box", 100);
+    const brokenDb = {
+      prepare: () => {
+        throw new Error("D1 is down");
+      },
+    } as unknown as D1Database;
+    await handleEmail(message, { ...bindings, DB: brokenDb, OWNER_EMAIL: "richard@piedpiper.com" });
+    expect(forwardedTo).toEqual(["richard@piedpiper.com"]);
   });
 });

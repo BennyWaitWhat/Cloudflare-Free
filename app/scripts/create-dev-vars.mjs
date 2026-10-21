@@ -10,8 +10,8 @@ const lines = [
   "# Cloudflare's published always-pass Turnstile test secret.",
   "TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA",
   "",
-  "# Usernames that get the admin role locally.",
-  "ADMIN_USERNAMES=owner",
+  "# Member ids that get the admin role locally: sign up, copy the id from your Account page, paste it here, then restart npm run dev.",
+  "ADMIN_USER_IDS=",
 ];
 
 try {

@@ -1,6 +1,6 @@
 import type { Bindings } from "../env";
 
-// Free-tier models (none of the seven Workers Paid-only models). One shared
+// Free-tier models (none of the Workers Paid-only models). One shared
 // budget of 10,000 Neurons/day covers all of them; calls past it get HTTP 429.
 export const MODELS = {
   chat: "@cf/zai-org/glm-4.7-flash",
@@ -12,6 +12,9 @@ export const MODELS = {
 
 /** bge-small vectors are 384-dimensional; the Vectorize index must match. */
 export const EMBEDDING_DIMENSIONS = 384;
+
+/** True for the error a remote-only binding such as Workers AI throws in local dev and tests. */
+export const runsOnlyOnCloudflare = (error: unknown) => /needs to be run remotely/i.test(String(error));
 
 /** Routes Workers AI through AI Gateway when AI_GATEWAY_ID is set. */
 export function aiOptions(env: Bindings, tag: string): AiOptions {
@@ -31,10 +34,14 @@ export interface ModerationVerdict {
   categories: string[];
 }
 
+const MAX_MODERATED_CHARS = 6000; // 140 title + 5,000 body + photo description
+
+/** Llama Guard reads the whole text; anything longer than a post can be is refused unread. */
 export async function moderate(env: Bindings, text: string): Promise<ModerationVerdict> {
+  if (text.length > MAX_MODERATED_CHARS) return { safe: false, categories: ["too-long"] };
   const output = await env.AI.run(
     MODELS.moderation,
-    { messages: [{ role: "user", content: text.slice(0, 4000) }], max_tokens: 32 },
+    { messages: [{ role: "user", content: text }], max_tokens: 32 },
     aiOptions(env, "moderation"),
   );
   const verdict = output.response;

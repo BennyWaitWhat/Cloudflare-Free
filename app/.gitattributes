@@ -1,0 +1,3 @@
+# Generated files: keep them out of GitHub's language bar and collapsed in diffs
+public/learn/*.html linguist-generated=true
+src/worker/worker-configuration.d.ts linguist-generated=true

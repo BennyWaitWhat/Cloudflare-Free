@@ -10,8 +10,8 @@ export function Lab() {
       <header className="page-header">
         <h1>Lab</h1>
         <p className="lead">
-          Small demos of free Cloudflare products. AI tools share one budget of 10,000 Neurons a day, so they may pause until
-          midnight UTC.
+          Small demos of free Cloudflare products. The assistant and image generation share 6,000 of the free 10,000 Neurons a
+          day, leaving the rest for moderation, so they may pause until midnight UTC.
         </p>
       </header>
       <div className="grid two">
@@ -66,7 +66,7 @@ function AssistantDemo() {
 
   return (
     <section className="card">
-      <h3>Ask the assistant</h3>
+      <h2 className="h3">Ask the assistant</h2>
       <p className="muted small">Workers AI (GLM-4.7 Flash), with posts found through Vectorize as context.</p>
       <div className="chat-log short">
         {turns.length === 0 && <p className="muted">Try: "Which free products does this site use?"</p>}
@@ -77,12 +77,18 @@ function AssistantDemo() {
         ))}
       </div>
       <form className="row" onSubmit={ask}>
-        <input value={draft} maxLength={2000} placeholder="Ask something" onChange={(e) => setDraft(e.target.value)} />
+        <input
+          value={draft}
+          maxLength={2000}
+          placeholder="Ask something"
+          aria-label="Question for the assistant"
+          onChange={(e) => setDraft(e.target.value)}
+        />
         <button type="submit" disabled={busy || !draft.trim()}>
           Ask
         </button>
       </form>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
     </section>
   );
 }
@@ -114,16 +120,28 @@ function ImageDemo() {
 
   return (
     <section className="card">
-      <h3>Generate an image</h3>
+      <h2 className="h3">Generate an image</h2>
       <p className="muted small">FLUX.1 schnell on Workers AI, about 57 Neurons per image.</p>
       <form className="row" onSubmit={generate}>
-        <input value={prompt} maxLength={500} placeholder="A lighthouse made of clouds" onChange={(e) => setPrompt(e.target.value)} />
+        <input
+          value={prompt}
+          maxLength={500}
+          placeholder="A lighthouse made of clouds"
+          aria-label="Image prompt"
+          onChange={(e) => setPrompt(e.target.value)}
+        />
         <button type="submit" disabled={busy || prompt.trim().length < 3}>
           {busy ? "Drawing…" : "Draw"}
         </button>
       </form>
-      {error && <p className="error">{error}</p>}
-      {image && <img className="generated" src={image} alt={prompt} />}
+      {error && <p className="error" role="alert">{error}</p>}
+      {image ? (
+        <img className="generated" src={image} alt={prompt} />
+      ) : (
+        <div className="placeholder" aria-hidden="true">
+          {busy ? "Drawing…" : "Your picture appears here"}
+        </div>
+      )}
     </section>
   );
 }
@@ -168,15 +186,21 @@ function PreviewDemo() {
 
   return (
     <section className="card">
-      <h3>Link preview</h3>
+      <h2 className="h3">Link preview</h2>
       <p className="muted small">Worker fetch + HTMLRewriter, cached in KV. Screenshots use Browser Run.</p>
       <form className="row" onSubmit={load}>
-        <input type="url" value={url} placeholder="https://example.com" onChange={(e) => setUrl(e.target.value)} />
+        <input
+          type="url"
+          value={url}
+          placeholder="https://example.com"
+          aria-label="Link to preview"
+          onChange={(e) => setUrl(e.target.value)}
+        />
         <button type="submit" disabled={busy || !url}>
           Preview
         </button>
       </form>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       {preview && (
         <div className="preview">
           {preview.image && <img src={preview.image} alt="" loading="lazy" referrerPolicy="no-referrer" />}
@@ -225,18 +249,24 @@ function DnsDemo() {
 
   return (
     <section className="card">
-      <h3>DNS lookup</h3>
+      <h2 className="h3">DNS lookup</h2>
       <p className="muted small">The 1.1.1.1 resolver's DNS-over-HTTPS JSON API.</p>
       <form className="row" onSubmit={lookup}>
-        <input value={name} onChange={(e) => setName(e.target.value)} />
-        <select value={type} onChange={(e) => setType(e.target.value)}>
+        <input
+          value={name}
+          aria-label="Domain name"
+          autoCapitalize="none"
+          spellCheck={false}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <select value={type} aria-label="Record type" onChange={(e) => setType(e.target.value)}>
           {DNS_TYPES.map((value) => (
             <option key={value}>{value}</option>
           ))}
         </select>
         <button type="submit">Look up</button>
       </form>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       {answer && (
         <ul className="plain small">
           {(answer.Answer ?? []).map((record, index) => (
@@ -277,15 +307,15 @@ function MarkdownDemo() {
 
   return (
     <section className="card">
-      <h3>Document to Markdown</h3>
+      <h2 className="h3">Document to Markdown</h2>
       <p className="muted small">PDF, Office, HTML, CSV and more, converted by Workers AI.</p>
       <form className="row" onSubmit={convert}>
-        <input ref={input} type="file" />
+        <input ref={input} type="file" aria-label="Document to convert" />
         <button type="submit" disabled={busy}>
           Convert
         </button>
       </form>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       {markdown && <pre className="output">{markdown.slice(0, 4000)}</pre>}
     </section>
   );
@@ -310,8 +340,8 @@ function StatusDemo() {
 
   return (
     <section className="card">
-      <h3>Cloudflare status</h3>
-      {error && <p className="error">{error}</p>}
+      <h2 className="h3">Cloudflare status</h2>
+      {error && <p className="error" role="alert">{error}</p>}
       {status && (
         <>
           <p>
@@ -356,12 +386,12 @@ function RandomDemo() {
 
   return (
     <section className="card">
-      <h3>Verifiable dice</h3>
+      <h2 className="h3">Verifiable dice</h2>
       <p className="muted small">Each roll comes from a public drand round that anyone can check.</p>
       <button type="button" onClick={roll}>
         Roll
       </button>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       {beacon && (
         <p>
           <span className="dice">{beacon.dice}</span> from round{" "}

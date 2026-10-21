@@ -1,4 +1,6 @@
+import type { Bindings } from "../env";
 import type { PostKind, PostStatus, PublicPost } from "../../shared/types";
+import { embed } from "./ai";
 
 export const POST_SELECT = `
   SELECT p.id, p.kind, p.title, p.body, p.image_key, p.image_alt, p.status, p.moderation_note,
@@ -34,4 +36,16 @@ export function toPublicPost(row: PostRow): PublicPost {
     createdAt: row.created_at,
     publishedAt: row.published_at,
   };
+}
+
+/** Adds a post to the search index; returns false when the Vectorize index hasn't been created yet. */
+export async function indexForSearch(env: Bindings, id: string, kind: string, text: string): Promise<boolean> {
+  try {
+    const [values] = await embed(env, [text.slice(0, 2000)]);
+    await env.SEARCH_INDEX.upsert([{ id, values, metadata: { kind } }]);
+    return true;
+  } catch (error) {
+    console.warn("search indexing skipped", error);
+    return false;
+  }
 }

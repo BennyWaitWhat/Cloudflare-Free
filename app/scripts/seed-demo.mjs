@@ -1,5 +1,5 @@
 // Fills the local dev site with a demo community, the cast of HBO's Silicon Valley:
-// members, posts with photos, and chat messages. It only touches local data.
+// members, posts with photos, blog posts and chat messages. It only touches local data.
 // Run with `npm run demo` while `npm run dev` is running.
 import { execFileSync } from "node:child_process";
 import { createHmac } from "node:crypto";
@@ -84,6 +84,27 @@ const POSTS = [
     minutesAgo: 1980,
     body: "At Hooli, we don't just make the world a better place. We make it a better place for free. Pending legal review.",
   },
+  {
+    by: "richard",
+    kind: "blog",
+    minutesAgo: 2880,
+    title: "How the hosting bill got to $0",
+    body: "Static Assets serve every page for free, so the Worker only wakes up for /api, /img and security.txt. That one rule keeps us far under 100,000 requests a day.",
+  },
+  {
+    by: "jared",
+    kind: "blog",
+    minutesAgo: 4320,
+    title: "A gentle tour of the free-tier limits",
+    body: "10 ms of CPU per request and 10,000 Neurons a day. I keep both numbers on a sticky note. It's laminated.",
+  },
+  {
+    by: "gilfoyle",
+    kind: "blog",
+    minutesAgo: 5760,
+    title: "Why there is no password column",
+    body: "Passkeys: nothing to leak, nothing to reset, nothing for Dinesh to forget.",
+  },
 ];
 
 /** The #lobby conversation, oldest first. */
@@ -149,7 +170,7 @@ function seedDatabase() {
       );
     }
     statements.push(
-      `INSERT INTO posts (id, author_id, kind, body, image_key, image_alt, status, created_at, published_at) VALUES (${sql(`demo-post-${index + 1}`)}, ${sql(`demo-${post.by}`)}, 'community', ${sql(post.body)}, ${sql(key)}, ${sql(post.alt)}, 'published', ${at}, ${at});`,
+      `INSERT INTO posts (id, author_id, kind, title, body, image_key, image_alt, status, created_at, published_at) VALUES (${sql(`demo-post-${index + 1}`)}, ${sql(`demo-${post.by}`)}, ${sql(post.kind ?? "community")}, ${sql(post.title)}, ${sql(post.body)}, ${sql(key)}, ${sql(post.alt)}, 'published', ${at}, ${at});`,
     );
   }
   const folder = mkdtempSync(join(tmpdir(), "demo-seed-"));
@@ -199,8 +220,9 @@ async function main() {
   seedDatabase();
   const sent = await seedChat();
   const photos = POSTS.filter((post) => post.photo).length;
+  const blog = POSTS.filter((post) => post.kind === "blog").length;
   console.log(
-    `Demo community ready: ${MEMBERS.length} members, ${POSTS.length} posts (${photos} with photos), ${sent} new chat messages in #lobby.`,
+    `Demo community ready: ${MEMBERS.length} members, ${POSTS.length} posts (${photos} with photos, ${blog} on the blog), ${sent} new chat messages in #lobby.`,
   );
 }
 

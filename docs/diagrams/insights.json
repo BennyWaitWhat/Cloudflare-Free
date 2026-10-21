@@ -179,7 +179,7 @@
       "title": "Logs, traces and errors",
       "items": [
         "The observability setting in wrangler.jsonc records every request (head_sampling_rate 1)",
-        "Workers Logs: 200,000 events a day, kept 3 days; Traces and Issues are free in beta",
+        "Workers Logs: 200,000 events a day, kept 3 days; from 1 December logs, traces and Issues share 0.5 GB a day, kept 7 days",
         "You read them in the Cloudflare dashboard; source maps keep stack traces readable"
       ]
     },

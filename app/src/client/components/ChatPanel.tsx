@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { CHAT_ROOMS, type ChatEvent, type ChatMessage, type ChatRoomName } from "../../shared/types";
+import { CHAT_ROOMS, CHAT_TAB_REPLACED, type ChatEvent, type ChatMessage, type ChatRoomName } from "../../shared/types";
 import { timeAgo } from "../api";
 import { Link } from "../router";
 import { useSite } from "../site";
 
 /** Live chat: each room is a Durable Object holding hibernating WebSockets. */
 export function ChatPanel() {
-  const { user } = useSite();
+  const { config, user } = useSite();
   const [room, setRoom] = useState<ChatRoomName>("lobby");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [online, setOnline] = useState(0);
@@ -16,7 +16,11 @@ export function ChatPanel() {
   const socket = useRef<WebSocket | null>(null);
   const list = useRef<HTMLDivElement>(null);
 
+  const sessionKnown = config !== null;
+
   useEffect(() => {
+    // Wait until the session is known, so a page load opens one socket rather than two.
+    if (!sessionKnown) return;
     let stopped = false;
     let attempts = 0;
     let timer: number | undefined;
@@ -42,9 +46,14 @@ export function ChatPanel() {
         else if (data.type === "presence") setOnline(data.online);
         else setError(data.message);
       };
-      ws.onclose = () => {
+      ws.onclose = (event) => {
         setConnected(false);
         if (stopped) return;
+        // The room closed this tab because the member opened chat in a newer one.
+        if (event.code === CHAT_TAB_REPLACED) {
+          setError("Chat moved to your newer tab. Reload this page to chat here.");
+          return;
+        }
         attempts = Math.min(attempts + 1, 5);
         timer = window.setTimeout(connect, attempts * 1500);
       };
@@ -59,7 +68,7 @@ export function ChatPanel() {
       socket.current?.close();
     };
     // Reconnect when the user signs in or out so the room knows who is talking.
-  }, [room, user?.id]);
+  }, [room, user?.id, sessionKnown]);
 
   useEffect(() => {
     if (list.current) list.current.scrollTop = list.current.scrollHeight;
@@ -74,18 +83,24 @@ export function ChatPanel() {
   }
 
   return (
-    <section className="card chat">
+    <section id="chat" className="card chat">
       <div className="chat-head">
         <div className="tabs">
           {CHAT_ROOMS.map((name) => (
-            <button key={name} type="button" className={name === room ? "tab active" : "tab"} onClick={() => setRoom(name)}>
+            <button
+              key={name}
+              type="button"
+              className={name === room ? "tab active" : "tab"}
+              aria-pressed={name === room}
+              onClick={() => setRoom(name)}
+            >
               #{name}
             </button>
           ))}
         </div>
-        <span className="muted small">{connected ? `${online} online` : "connecting…"}</span>
+        <span className="muted small" role="status">{connected ? `${online} online` : "connecting…"}</span>
       </div>
-      <div className="chat-log" ref={list}>
+      <div className="chat-log" ref={list} role="log" aria-label={`Messages in #${room}`}>
         {messages.length === 0 && <p className="muted">No messages yet. Say hello.</p>}
         {messages.map((message) => (
           <p key={message.id} className="chat-line">
@@ -94,10 +109,16 @@ export function ChatPanel() {
           </p>
         ))}
       </div>
-      {error && <p className="error small">{error}</p>}
+      {error && <p className="error small" role="alert">{error}</p>}
       {user ? (
         <form className="row" onSubmit={send}>
-          <input value={draft} maxLength={500} placeholder={`Message #${room}`} onChange={(e) => setDraft(e.target.value)} />
+          <input
+            value={draft}
+            maxLength={500}
+            placeholder={`Message #${room}`}
+            aria-label={`Message #${room}`}
+            onChange={(e) => setDraft(e.target.value)}
+          />
           <button type="submit" disabled={!connected || !draft.trim()}>
             Send
           </button>

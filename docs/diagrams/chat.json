@@ -102,7 +102,7 @@
       "from": "browser",
       "to": "room",
       "y": 326,
-      "label": "send text (500 chars, 1 a second)",
+      "label": "send text (500 chars, 1 a second per member)",
       "variant": "emphasis"
     },
     {
@@ -238,7 +238,8 @@
       "title": "Small and tidy",
       "items": [
         "setWebSocketAutoResponse replies to pings without waking the room",
-        "Limits: 500 characters, 1 message a second, about 200 kept",
+        "Limits: 500 characters and 1 message a second per member, across all their tabs; about 200 kept",
+        "Each member keeps up to 3 tabs open in a room; a 4th closes their oldest",
         "Sockets silent for 75 s are closed, so the online count stays honest"
       ]
     }

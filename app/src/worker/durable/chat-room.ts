@@ -1,6 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 import type { Bindings } from "../env";
-import type { ChatEvent, ChatMessage } from "../../shared/types";
+import { CHAT_TAB_REPLACED, type ChatEvent, type ChatMessage } from "../../shared/types";
 
 interface Identity {
   id: string;
@@ -16,6 +16,8 @@ interface SocketState {
 
 const KEEP_MESSAGES = 200;
 const MAX_TEXT = 500;
+/** Open sockets one member may have in a room at once. */
+const MAX_TABS = 3;
 /** Clients ping every 25 s; a socket silent for longer than this is treated as gone. */
 const STALE_MS = 75_000;
 
@@ -26,6 +28,9 @@ const STALE_MS = 75_000;
  * answered by the runtime without waking the object.
  */
 export class ChatRoom extends DurableObject<Bindings> {
+  /** When each member last sent a message, from any of their tabs. Starts empty after the room hibernates. */
+  private lastByUser = new Map<string, number>();
+
   constructor(ctx: DurableObjectState, env: Bindings) {
     super(ctx, env);
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
@@ -43,14 +48,25 @@ export class ChatRoom extends DurableObject<Bindings> {
     if (request.headers.get("upgrade")?.toLowerCase() !== "websocket") {
       return new Response("Expected a WebSocket upgrade", { status: 426 });
     }
+    // Each member's sockets are tagged with their id. A new tab past MAX_TABS closes their oldest
+    // one rather than being refused: a page closed mid-handshake leaves a socket behind that only
+    // goes stale after STALE_MS, and refusing would lock the member out until then.
+    const user = parseIdentity(request.headers.get("x-chat-user"));
+    if (user) {
+      const tabs = this.ctx.getWebSockets(user.id).filter((socket) => this.isLive(socket));
+      tabs.sort((a, b) => connectedAt(a) - connectedAt(b));
+      for (const socket of tabs.slice(0, Math.max(0, tabs.length - MAX_TABS + 1))) {
+        try {
+          socket.close(CHAT_TAB_REPLACED, "Chat opened in a newer tab");
+        } catch {
+          // Already closed.
+        }
+      }
+    }
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair) as [WebSocket, WebSocket];
-    this.ctx.acceptWebSocket(server);
-    server.serializeAttachment({
-      user: parseIdentity(request.headers.get("x-chat-user")),
-      connectedAt: Date.now(),
-      lastSentAt: 0,
-    } satisfies SocketState);
+    this.ctx.acceptWebSocket(server, user ? [user.id] : []);
+    server.serializeAttachment({ user, connectedAt: Date.now(), lastSentAt: 0 } satisfies SocketState);
     send(server, { type: "history", messages: this.history(50) });
     this.broadcastPresence();
     return new Response(null, { status: 101, webSocket: client });
@@ -90,11 +106,13 @@ export class ChatRoom extends DurableObject<Bindings> {
     }
     if (!text) return;
 
+    // One message a second per member, however many tabs they have open.
     const now = Date.now();
-    if (now - state.lastSentAt < 1000) {
+    if (now - (this.lastByUser.get(state.user.id) ?? 0) < 1000) {
       send(ws, { type: "error", message: "You're sending messages too quickly" });
       return;
     }
+    this.lastByUser.set(state.user.id, now);
     ws.serializeAttachment({ ...state, lastSentAt: now } satisfies SocketState);
 
     const at = Math.floor(now / 1000);
@@ -129,14 +147,19 @@ export class ChatRoom extends DurableObject<Bindings> {
     this.broadcastPresence(ws);
   }
 
+  /** True if the socket connected, pinged or sent a message within STALE_MS. */
+  private isLive(socket: WebSocket, now = Date.now()): boolean {
+    const state = socket.deserializeAttachment() as SocketState | null;
+    const lastPing = this.ctx.getWebSocketAutoResponseTimestamp(socket)?.getTime() ?? 0;
+    return now - Math.max(lastPing, state?.connectedAt ?? 0, state?.lastSentAt ?? 0) < STALE_MS;
+  }
+
   /** Sockets heard from recently; silent ones are closed so they stop counting as online. */
   private liveSockets(except?: WebSocket): WebSocket[] {
     const now = Date.now();
     return this.ctx.getWebSockets().filter((socket) => {
       if (socket === except) return false;
-      const state = socket.deserializeAttachment() as SocketState | null;
-      const lastPing = this.ctx.getWebSocketAutoResponseTimestamp(socket)?.getTime() ?? 0;
-      if (now - Math.max(lastPing, state?.connectedAt ?? 0, state?.lastSentAt ?? 0) < STALE_MS) return true;
+      if (this.isLive(socket, now)) return true;
       try {
         socket.close(1001, "No heartbeat");
       } catch {
@@ -162,6 +185,10 @@ function send(socket: WebSocket, event: ChatEvent): void {
   } catch {
     // The socket closed while we were sending.
   }
+}
+
+function connectedAt(socket: WebSocket): number {
+  return (socket.deserializeAttachment() as SocketState | null)?.connectedAt ?? 0;
 }
 
 function parseIdentity(header: string | null): Identity | null {

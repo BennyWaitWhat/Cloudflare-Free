@@ -7,9 +7,11 @@ import { startSession } from "../src/worker/lib/session";
 export const bindings = env as unknown as Bindings & { TEST_MIGRATIONS: D1Migration[] };
 export const ORIGIN = "https://site.test";
 
-/** Inserts a member and returns a session cookie minted by the app's own session code. */
-export async function signIn(username: string): Promise<{ userId: string; cookie: string }> {
-  const userId = crypto.randomUUID();
+/**
+ * Inserts a member and returns a session cookie minted by the app's own session code.
+ * Pass `userId` to choose the member id, for example the one vitest.config.ts makes admin.
+ */
+export async function signIn(username: string, userId = crypto.randomUUID()): Promise<{ userId: string; cookie: string }> {
   await bindings.DB.prepare("INSERT INTO users (id, username, display_name, webauthn_user_id) VALUES (?, ?, ?, ?)")
     .bind(userId, username, username, "test-handle")
     .run();

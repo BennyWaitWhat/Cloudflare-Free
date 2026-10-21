@@ -61,7 +61,7 @@ export function Composer({ kind, onPosted }: { kind: PostKind; onPosted: () => v
           ? "Published."
           : status === "rejected"
             ? "The safety check held this post back."
-            : "Still being checked; it will appear shortly.",
+            : "Still waiting: the site owner can publish it from the Admin page.",
       );
       onPosted();
     } catch (failure) {
@@ -75,9 +75,12 @@ export function Composer({ kind, onPosted }: { kind: PostKind; onPosted: () => v
 
   return (
     <form className="card form" onSubmit={submit}>
-      {kind === "blog" && <input placeholder="Title" value={title} maxLength={140} onChange={(e) => setTitle(e.target.value)} />}
+      {kind === "blog" && (
+        <input placeholder="Title" aria-label="Title" value={title} maxLength={140} onChange={(e) => setTitle(e.target.value)} />
+      )}
       <textarea
         placeholder={kind === "blog" ? "Write a blog post" : "Share something with the community"}
+        aria-label={kind === "blog" ? "Blog post" : "Your post"}
         value={body}
         maxLength={5000}
         rows={4}
@@ -93,9 +96,10 @@ export function Composer({ kind, onPosted }: { kind: PostKind; onPosted: () => v
         <button type="submit" disabled={busy || !token || !body.trim()}>
           {busy ? "Posting…" : "Post"}
         </button>
-        {notice && <span className="muted">{notice}</span>}
+        {/* Always rendered, so screen readers hear each new notice. */}
+        <span className="muted" role="status">{notice}</span>
       </div>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
     </form>
   );
 }

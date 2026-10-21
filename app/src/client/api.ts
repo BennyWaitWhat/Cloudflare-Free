@@ -27,12 +27,19 @@ export async function request(path: string, options: ApiOptions = {}): Promise<R
     headers["content-type"] = "application/json";
     body = JSON.stringify(options.json);
   }
-  const response = await fetch(path, {
-    method: options.method ?? (body === undefined ? "GET" : "POST"),
-    credentials: "same-origin",
-    headers,
-    body,
-  });
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      method: options.method ?? (body === undefined ? "GET" : "POST"),
+      credentials: "same-origin",
+      headers,
+      body,
+    });
+  } catch {
+    // fetch only rejects when no answer came back at all.
+    const message = navigator.onLine ? "Couldn't reach the server. Try again." : "You're offline. Try again when you reconnect.";
+    throw new ApiError(0, message);
+  }
   if (!response.ok) {
     let message = `Request failed (${response.status})`;
     try {

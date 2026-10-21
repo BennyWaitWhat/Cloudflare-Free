@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CATALOG, CATEGORIES, STATUS_LABELS, score, type Status } from "../../shared/catalog";
-import { ScoreBar, StatusBadge } from "../components/ScoreBar";
+import { ScoreBar, SettingBadge, StatusBadge } from "../components/ScoreBar";
 import { Link } from "../router";
 
 const FILTERS: (Status | "all")[] = ["all", "live", "setup", "card", "domain", "planned", "skipped"];
@@ -15,8 +15,9 @@ export function Scoreboard() {
       <header className="page-header">
         <h1>Scoreboard</h1>
         <p className="lead">
-          {totals.total} free Cloudflare offerings. {totals.built} have working code in this repo; {totals.byStatus.live} work
-          the moment the Worker deploys, and the rest wait on the domain, a card on file or a one-time setup step.
+          {totals.total} free Cloudflare offerings. {totals.withCode} run on code in this repo and {totals.settings} are free
+          settings or always-on protections; {totals.byStatus.live} work once the README's deploy steps are done, and the rest
+          wait on the domain, a card on file or a one-time setup step.
         </p>
       </header>
 
@@ -30,6 +31,7 @@ export function Scoreboard() {
             key={status}
             type="button"
             className={status === filter ? "chip active" : "chip"}
+            aria-pressed={status === filter}
             onClick={() => setFilter(status)}
           >
             {status === "all" ? "All" : STATUS_LABELS[status]} ({status === "all" ? totals.total : totals.byStatus[status]})
@@ -48,7 +50,10 @@ export function Scoreboard() {
                 <li key={offering.id} className="card offering">
                   <div className="offering-head">
                     <strong>{offering.name}</strong>
-                    <StatusBadge status={offering.status} />
+                    <span className="badges">
+                      {offering.setting && <SettingBadge />}
+                      <StatusBadge status={offering.status} />
+                    </span>
                   </div>
                   <p className="muted small">Free: {offering.free}</p>
                   <p>

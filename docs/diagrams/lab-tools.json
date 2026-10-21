@@ -165,7 +165,8 @@
       "items": [
         "Image prompts pass Llama Guard before FLUX.1 schnell draws them",
         "Documents under 5 MB become Markdown with toMarkdown",
-        "AI_LIMITER allows 6 AI calls a minute per visitor, within 10,000 Neurons a day"
+        "AI_LIMITER allows 6 calls a minute per visitor for each AI tool, all within 10,000 Neurons a day",
+        "Image generation and chat stop at 6,000 Neurons a day, so moderation always has budget left"
       ]
     },
     {

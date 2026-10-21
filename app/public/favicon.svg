@@ -7,7 +7,7 @@
   </defs>
   <rect width="64" height="64" rx="14" fill="url(#bg)"/>
   <g fill="#fff">
-    <circle cx="23" cy="35.8" r="10.9"/>
+    <circle cx="23" cy="35.1" r="10.9"/>
     <circle cx="33.3" cy="28.8" r="14.1"/>
     <circle cx="43.5" cy="36.5" r="9.6"/>
     <rect x="14.1" y="35.8" width="38.4" height="10.2" rx="5.1"/>

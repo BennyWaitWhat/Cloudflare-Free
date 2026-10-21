@@ -10,8 +10,9 @@
   "mainPath": [
     "pending",
     "loading",
+    "describing",
     "checking",
-    "enriching",
+    "indexing",
     "published"
   ],
   "states": [
@@ -32,20 +33,28 @@
       "step": "02"
     },
     {
+      "id": "describing",
+      "type": "active",
+      "label": "Describe photo",
+      "sublabel": "vision model",
+      "tag": "photo posts",
+      "step": "03"
+    },
+    {
       "id": "checking",
       "type": "decision",
       "label": "Safety check",
       "sublabel": "Llama Guard",
       "tag": "2 retries",
-      "step": "03"
+      "step": "04"
     },
     {
-      "id": "enriching",
+      "id": "indexing",
       "type": "active",
-      "label": "Alt text and index",
-      "sublabel": "best effort, can be skipped",
+      "label": "Index for search",
+      "sublabel": "Vectorize",
       "tag": "best effort",
-      "step": "04"
+      "step": "05"
     },
     {
       "id": "published",
@@ -53,7 +62,7 @@
       "label": "Published",
       "sublabel": "shown in the feed",
       "tag": "done",
-      "step": "05"
+      "step": "06"
     },
     {
       "id": "retrying",
@@ -82,25 +91,31 @@
       "id": "pending-loading",
       "from": "pending",
       "to": "loading",
-      "label": "start Workflow"
+      "label": "start"
     },
     {
-      "id": "loading-checking",
+      "id": "loading-describing",
       "from": "loading",
-      "to": "checking",
-      "label": "post loaded"
+      "to": "describing",
+      "label": "loaded"
     },
     {
-      "id": "checking-enriching",
+      "id": "describing-checking",
+      "from": "describing",
+      "to": "checking",
+      "label": "text + photo"
+    },
+    {
+      "id": "checking-indexing",
       "from": "checking",
-      "to": "enriching",
+      "to": "indexing",
       "label": "safe"
     },
     {
-      "id": "enriching-published",
-      "from": "enriching",
+      "id": "indexing-published",
+      "from": "indexing",
       "to": "published",
-      "label": "publish post"
+      "label": "publish"
     },
     {
       "id": "check-fails",
@@ -121,6 +136,13 @@
       "from": "checking",
       "to": "rejected",
       "label": "unsafe",
+      "variant": "security"
+    },
+    {
+      "id": "not-described",
+      "from": "checking",
+      "to": "waiting",
+      "label": "photo not described",
       "variant": "security"
     },
     {
@@ -151,8 +173,8 @@
       "title": "From post to published",
       "items": [
         "Saved as pending; the API answers 202 right away and the Workflow does the rest",
-        "It checks safety, adds alt text for photos and a search entry, then publishes",
-        "The Composer polls every 2 s for about 30 s, then says it is still being checked"
+        "A vision model describes the photo, Llama Guard checks it with the title and body, then the post gets a search entry and is published",
+        "The Composer polls every 2 s for about 30 s; a post still pending after that waits for the owner"
       ]
     },
     {
@@ -166,10 +188,11 @@
     },
     {
       "dot": "amber",
-      "title": "If retries run out",
+      "title": "Waiting for the owner",
       "items": [
-        "The Workflow errors and the row stays pending, also if the Workflow can't start",
-        "The owner can Publish or Reject on the Admin page; nothing sets it back to pending",
+        "The row stays pending if the photo can't be described (with a note), the retries run out or the Workflow can't start",
+        "The owner can Publish or Reject on the Admin page; the Workflow only changes posts that are still pending, so it never overwrites that choice",
+        "Locally, without Workers AI, posts are published with the note 'Published without AI checks (local dev)'",
         "Free: 3,000 Workflow steps a day; a post uses up to 5"
       ]
     }

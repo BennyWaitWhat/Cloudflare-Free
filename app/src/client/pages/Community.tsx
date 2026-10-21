@@ -45,14 +45,24 @@ export function Community() {
       <header className="page-header">
         <h1>Community</h1>
         <p className="lead">
-          Posts and photos are stored in D1 and R2. A Workflow checks each one with Llama Guard, writes alt text with a vision
-          model and indexes it in Vectorize before it appears. Chat rooms are Durable Objects.
+          Posts and photos are stored in D1 and R2. A Workflow has a vision model describe each photo, then checks the text and
+          that description with Llama Guard and indexes the post in Vectorize before it appears. Chat rooms are Durable Objects.
         </p>
+        <a href="#chat" className="button secondary jump-chat">
+          Jump to live chat
+        </a>
       </header>
       <div className="columns">
         <div className="stack">
           <Composer kind="community" onPosted={feed.reload} />
-          {feed.error && <p className="error">{feed.error}</p>}
+          {feed.error && (
+            <div className="row">
+              <p className="error" role="alert">{feed.error}</p>
+              <button type="button" className="secondary" disabled={feed.loading} onClick={feed.reload}>
+                Try again
+              </button>
+            </div>
+          )}
           {feed.posts.map((post) => (
             <PostCard key={post.id} post={post} />
           ))}

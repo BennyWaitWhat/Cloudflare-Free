@@ -2,24 +2,55 @@
   "name": "cloudflare-free",
   "version": "0.1.0",
   "private": true,
-  "description": "A website + installable web app built only from Cloudflare's free tier, using every free offering it can.",
+  "description": "A website and installable web app that runs only on Cloudflare's free tier, using every free product it can.",
+  "keywords": [
+    "cloudflare",
+    "cloudflare-workers",
+    "d1",
+    "r2",
+    "kv",
+    "durable-objects",
+    "workflows",
+    "queues",
+    "workers-ai",
+    "vectorize",
+    "hono",
+    "react",
+    "pwa",
+    "passkeys",
+    "free-tier"
+  ],
+  "homepage": "https://github.com/BennyWaitWhat/Cloudflare-Free#readme",
+  "bugs": {
+    "url": "https://github.com/BennyWaitWhat/Cloudflare-Free/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BennyWaitWhat/Cloudflare-Free.git",
+    "directory": "app"
+  },
   "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
   "scripts": {
     "setup": "node scripts/create-dev-vars.mjs && npm run db:migrate:local",
     "dev": "vite dev",
     "dev:remote": "vite dev --mode remote",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && wrangler deploy",
+    "deploy": "npm run build && wrangler deploy && npm run db:migrate:remote",
     "types": "wrangler types src/worker/worker-configuration.d.ts --strict-vars=false",
     "typecheck": "tsc -p src/worker && tsc -p src/client && tsc -p test && tsc -p scripts",
+    "check": "npm run typecheck && npm test && npm run build",
     "icons": "node scripts/make-icons.mjs",
     "demo": "node scripts/seed-demo.mjs",
     "readme:images": "node scripts/make-readme-images.mjs",
     "diagrams:images": "node scripts/export-diagram-images.mjs",
+    "diagrams:brand": "node scripts/brand-diagrams.mjs",
     "test": "vitest run",
-    "db:migrate:local": "wrangler d1 migrations apply cloudflare-free --local",
-    "db:migrate:remote": "wrangler d1 migrations apply cloudflare-free --remote"
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^14.0.0",
@@ -31,20 +62,19 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.64.0",
-    "@cloudflare/vitest-pool-workers": "^0.23.0",
+    "@cloudflare/vitest-plugin": "^1.0.0",
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
-    "vitest": "^4.1.11",
+    "vitest": "^4.1.12",
     "wrangler": "^4.151.0"
   },
   "allowScripts": {
-    "workerd@1.20260815.1": true,
     "workerd@1.20261012.1": true,
-    "esbuild@0.28.1": true,
-    "esbuild@0.28.2": true
+    "esbuild@0.28.2": true,
+    "workerd@1.20261019.1": true
   }
 }

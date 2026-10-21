@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { secureHeaders } from "hono/secure-headers";
 import type { AppEnv } from "./env";
+import { runsOnlyOnCloudflare } from "./lib/ai";
 import { loadSession } from "./lib/session";
 import { admin } from "./routes/admin";
 import { ai } from "./routes/ai";
@@ -21,6 +23,10 @@ app.use("/api/*", async (c, next) => {
   const request = c.req.raw;
   if (request.body && !request.bodyUsed) await request.arrayBuffer().catch(() => undefined);
 });
+// Security headers on every API response except the chat WebSocket's, which comes
+// from the Durable Object with headers that can't be changed.
+const secure = secureHeaders();
+app.use("/api/*", (c, next) => (c.req.header("upgrade") ? next() : secure(c, next)));
 app.use("/api/*", loadSession);
 app.route("/api", meta);
 app.route("/api/auth", auth);
@@ -38,7 +44,9 @@ app.get("/.well-known/security.txt", (c) => {
   const origin = new URL(c.req.url).origin;
   const expires = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
   c.header("cache-control", "public, max-age=86400");
-  return c.text(`Contact: ${origin}/contact\nExpires: ${expires}\nPreferred-Languages: en\nCanonical: ${origin}/.well-known/security.txt\n`);
+  return c.text(
+    `Contact: ${origin}/contact\nExpires: ${expires}\nPreferred-Languages: en\nPolicy: https://github.com/BennyWaitWhat/Cloudflare-Free/security/policy\nCanonical: ${origin}/.well-known/security.txt\n`,
+  );
 });
 
 app.notFound((c) => c.json({ error: "Not found" }, 404));
@@ -46,7 +54,7 @@ app.notFound((c) => c.json({ error: "Not found" }, 404));
 app.onError((error, c) => {
   if (error instanceof HTTPException) return c.json({ error: error.message }, error.status);
   const message = error instanceof Error ? error.message : String(error);
-  if (/needs to be run remotely/i.test(message)) {
+  if (runsOnlyOnCloudflare(error)) {
     return c.json({ error: "This feature runs on Cloudflare's network: use `npm run dev:remote` or deploy" }, 503);
   }
   if (/daily free allocation|\b(3036|4006)\b/i.test(message)) {

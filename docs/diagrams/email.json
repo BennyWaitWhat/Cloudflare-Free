@@ -181,8 +181,8 @@
       "title": "Mail coming in",
       "items": [
         "Email Routing hands mail for your address to the Worker's email handler",
-        "PostalMime parses it; the text (first 20,000 characters) is saved in D1 inbound_emails",
-        "If OWNER_EMAIL is set the original is forwarded too; the admin inbox lists the newest 50"
+        "If OWNER_EMAIL is set, the original is forwarded first, so a failed save never loses mail",
+        "Then PostalMime parses mail up to 512 KB and D1 inbound_emails keeps its text; the admin inbox lists the newest 50"
       ]
     },
     {

@@ -13,6 +13,23 @@ export function clientIp(c: Context<AppEnv>): string {
   return c.req.header("cf-connecting-ip") ?? "local";
 }
 
+/**
+ * The key rate limits count by: an IPv4 address as is, an IPv6 address as its /64.
+ * One home or phone usually gets a whole /64, so counting single IPv6 addresses
+ * would let one visitor reset their limit by switching to the next address.
+ */
+export function rateKey(c: Context<AppEnv>): string {
+  const ip = clientIp(c);
+  if (!ip.includes(":")) return ip;
+  // Expand "::" back into its zero groups, then keep the first four groups: the /64 network.
+  const [head, tail = ""] = ip.split("::");
+  const front = head ? head.split(":") : [];
+  const back = tail ? tail.split(":") : [];
+  const zeros = Array(Math.max(0, 8 - front.length - back.length)).fill("0");
+  const groups = ip.includes("::") ? [...front, ...zeros, ...back] : front;
+  return `${groups.slice(0, 4).map((group) => group.toLowerCase().padStart(4, "0")).join(":")}::/64`;
+}
+
 export function country(c: Context<AppEnv>): string | null {
   const cf = c.req.raw.cf as { country?: string } | undefined;
   return cf?.country ?? null;

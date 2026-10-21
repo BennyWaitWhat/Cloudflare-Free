@@ -6,7 +6,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "cloudflare-free",
   "main": "./src/worker/index.ts",
-  // Kept at or below the newest date @cloudflare/vitest-pool-workers' runtime supports (2026-08-22).
+  // Kept at or below the newest date the test runtime (@cloudflare/vitest-plugin) supports.
   "compatibility_date": "2026-08-20",
 
   // Free hostnames: <name>.<subdomain>.workers.dev plus per-version preview URLs.
@@ -36,8 +36,8 @@
 
   "vars": {
     "SITE_NAME": "Cloudflare Free",
-    // Comma-separated usernames that get the admin role.
-    "ADMIN_USERNAMES": "",
+    // Comma-separated member ids (shown on the Account page) that get the admin role.
+    "ADMIN_USER_IDS": "",
     // AI Gateway id; leave empty to call Workers AI directly.
     "AI_GATEWAY_ID": "",
     // Turnstile site key (public). This default is Cloudflare's always-pass test key.

@@ -63,12 +63,22 @@ export async function handleScheduled(controller: ScheduledController, env: Bind
   track(env, "nightly_rollup", { detail: day });
 }
 
-/** Email Worker: mail routed to this Worker lands in the admin inbox. */
+/**
+ * Email Worker: mail routed to this Worker is forwarded to OWNER_EMAIL first, then
+ * copied into the admin inbox. Saving the copy is best-effort, so a message too
+ * big to parse within the CPU limit, or a failed write, still reaches the owner.
+ */
 export async function handleEmail(message: ForwardableEmailMessage, env: Bindings): Promise<void> {
-  const parsed = await PostalMime.parse(await new Response(message.raw).arrayBuffer());
-  await env.DB.prepare("INSERT INTO inbound_emails (id, from_addr, to_addr, subject, text_body) VALUES (?, ?, ?, ?, ?)")
-    .bind(crypto.randomUUID(), message.from, message.to, parsed.subject ?? null, (parsed.text ?? "").slice(0, 20000))
-    .run();
-  track(env, "email_received");
+  const raw = message.rawSize <= 512 * 1024 ? await new Response(message.raw).arrayBuffer() : null;
   if (env.OWNER_EMAIL) await message.forward(env.OWNER_EMAIL);
+  try {
+    const parsed = raw ? await PostalMime.parse(raw) : null;
+    const text = parsed ? (parsed.text ?? "") : "(too large to preview; see your inbox)";
+    await env.DB.prepare("INSERT INTO inbound_emails (id, from_addr, to_addr, subject, text_body) VALUES (?, ?, ?, ?, ?)")
+      .bind(crypto.randomUUID(), message.from, message.to, parsed?.subject ?? message.headers.get("subject"), text.slice(0, 20000))
+      .run();
+    track(env, "email_received");
+  } catch (error) {
+    console.error("email forwarded but not saved to the admin inbox", error);
+  }
 }
