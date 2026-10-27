@@ -98,7 +98,10 @@ The repository enforces strict separation of concerns across client execution, e
 
 ---
 
-## Primitive Matrix & Budget Defense
+<a id="primitive-matrix--budget-defense"></a>
+## Key Technical Challenges & Architectural Decisions
+
+### Primitive Matrix & Budget Defense
 
 To run reliably on Cloudflare's free plan, every architectural choice was engineered against a specific resource threshold:
 
