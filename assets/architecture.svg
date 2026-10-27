@@ -1,0 +1,283 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 740" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="100%" stop-color="#161b22"/>
+    </linearGradient>
+    <linearGradient id="card-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1c2128"/>
+      <stop offset="100%" stop-color="#161b22"/>
+    </linearGradient>
+    <linearGradient id="cf-orange" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f38020"/>
+      <stop offset="100%" stop-color="#faad3f"/>
+    </linearGradient>
+    <linearGradient id="blue-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#58a6ff"/>
+      <stop offset="100%" stop-color="#79c0ff"/>
+    </linearGradient>
+    <linearGradient id="purple-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#bc8cff"/>
+      <stop offset="100%" stop-color="#d2a8ff"/>
+    </linearGradient>
+    <linearGradient id="green-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#238636"/>
+      <stop offset="100%" stop-color="#2ea043"/>
+    </linearGradient>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#58a6ff"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#f38020"/>
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#bc8cff"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#3fb950"/>
+    </marker>
+  </defs>
+
+  <style>
+    .title { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 700; fill: #f0f6fc; }
+    .subtitle { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; fill: #8b949e; }
+    .section-header { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+    .card-title { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13.5px; font-weight: 600; fill: #f0f6fc; }
+    .card-sub { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; fill: #8b949e; }
+    .card-badge { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 10px; font-weight: 600; }
+    .metric { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 10px; fill: #7ee787; }
+    .flow-line { fill: none; stroke-width: 1.5; stroke-dasharray: 4,3; }
+  </style>
+
+  <!-- Background Canvas -->
+  <rect x="0" y="0" width="1120" height="740" rx="16" fill="url(#bg-grad)" stroke="#30363d" stroke-width="1.5"/>
+
+  <!-- Top Decorative Header Bar -->
+  <rect x="24" y="24" width="1072" height="64" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <circle cx="50" cy="56" r="6" fill="#ff5f56"/>
+  <circle cx="70" cy="56" r="6" fill="#ffbd2e"/>
+  <circle cx="90" cy="56" r="6" fill="#27c93f"/>
+
+  <text x="120" y="52" class="title">Cloudflare-Free System Architecture</text>
+  <text x="120" y="72" class="subtitle">100% Free-Tier Edge Serverless Infrastructure · Hono · WebAuthn · D1 SQLite · KV · R2 · Vectorize · Workers AI</text>
+
+  <!-- Top Badges -->
+  <g transform="translate(780, 42)">
+    <rect x="0" y="0" width="130" height="26" rx="6" fill="#21262d" stroke="#30363d"/>
+    <text x="65" y="17" text-anchor="middle" class="card-badge" fill="#58a6ff">100,000 req/day Free</text>
+
+    <rect x="140" y="0" width="150" height="26" rx="6" fill="#238636" fill-opacity="0.2" stroke="#3fb950"/>
+    <text x="215" y="17" text-anchor="middle" class="card-badge" fill="#3fb950">62 workerd Tests Passed</text>
+  </g>
+
+  <!-- ================= COLUMN 1: CLIENT & INGRESS ================= -->
+  <g transform="translate(24, 106)">
+    <!-- Group Container -->
+    <rect x="0" y="0" width="230" height="420" rx="12" fill="url(#card-grad)" stroke="#30363d" stroke-width="1"/>
+    <text x="16" y="28" class="section-header" fill="#58a6ff">Client &amp; Ingress Layer</text>
+
+    <!-- Node 1: Installable PWA / Browser -->
+    <g transform="translate(14, 46)">
+      <rect x="0" y="0" width="202" height="74" rx="8" fill="#21262d" stroke="#388bfd" stroke-width="1"/>
+      <text x="12" y="24" class="card-title">Browser &amp; PWA Client</text>
+      <text x="12" y="42" class="card-sub">React 19 SPA · Service Worker</text>
+      <text x="12" y="58" class="card-sub">Web Manifest · Touch Icons</text>
+      <text x="190" y="24" text-anchor="end" class="metric">0 Worker Cost</text>
+    </g>
+
+    <!-- Node 2: WebAuthn Passkeys -->
+    <g transform="translate(14, 134)">
+      <rect x="0" y="0" width="202" height="74" rx="8" fill="#21262d" stroke="#3fb950" stroke-width="1"/>
+      <text x="12" y="24" class="card-title">WebAuthn / Passkeys</text>
+      <text x="12" y="42" class="card-sub">SimpleWebAuthn ceremony</text>
+      <text x="12" y="58" class="card-sub">Zero Passwords · &lt;10ms CPU</text>
+      <text x="190" y="24" text-anchor="end" class="metric">FIDO2</text>
+    </g>
+
+    <!-- Node 3: Cloudflare Turnstile -->
+    <g transform="translate(14, 222)">
+      <rect x="0" y="0" width="202" height="74" rx="8" fill="#21262d" stroke="#d29922" stroke-width="1"/>
+      <text x="12" y="24" class="card-title">Turnstile CAPTCHA</text>
+      <text x="12" y="42" class="card-sub">Non-interactive bot defense</text>
+      <text x="12" y="58" class="card-sub">Sign-up &amp; Contact validation</text>
+      <text x="190" y="24" text-anchor="end" class="metric">100% Free</text>
+    </g>
+
+    <!-- Node 4: Static Assets Binding -->
+    <g transform="translate(14, 310)">
+      <rect x="0" y="0" width="202" height="96" rx="8" fill="#21262d" stroke="#8b949e" stroke-width="1"/>
+      <text x="12" y="24" class="card-title">Workers Static Assets</text>
+      <text x="12" y="42" class="card-sub">Global CDN Edge distribution</text>
+      <text x="12" y="58" class="card-sub">Direct file delivery bypasses</text>
+      <text x="12" y="74" class="card-sub">Worker invocations completely</text>
+      <text x="190" y="24" text-anchor="end" class="metric">Unlimited</text>
+    </g>
+  </g>
+
+  <!-- ================= COLUMN 2: WORKER CORE & LOGIC ================= -->
+  <g transform="translate(274, 106)">
+    <rect x="0" y="0" width="310" height="420" rx="12" fill="url(#card-grad)" stroke="#f38020" stroke-width="1.2"/>
+    <text x="16" y="28" class="section-header" fill="#f38020">Edge Compute Core (Hono)</text>
+
+    <!-- Node: Hono Router & Middlewares -->
+    <g transform="translate(14, 46)">
+      <rect x="0" y="0" width="282" height="110" rx="8" fill="#21262d" stroke="#f38020" stroke-width="1"/>
+      <text x="14" y="24" class="card-title">Hono API Router (/api/*)</text>
+      <text x="14" y="44" class="card-sub">Smart Placement · Ultra-low latency routes</text>
+      <text x="14" y="62" class="card-sub">HMAC-signed session cookies (zero KV writes)</text>
+      <text x="14" y="80" class="card-sub">WAF Rate Limiting binding (100 req/min defense)</text>
+      <text x="14" y="98" class="card-sub">ETag / Cache-Control RFC compliant headers</text>
+    </g>
+
+    <!-- Submodule Grid -->
+    <g transform="translate(14, 170)">
+      <rect x="0" y="0" width="134" height="66" rx="6" fill="#161b22" stroke="#30363d"/>
+      <text x="10" y="22" class="card-title" font-size="12px">Auth Handler</text>
+      <text x="10" y="40" class="card-sub">Passkey register</text>
+      <text x="10" y="54" class="card-sub">&amp; verify ceremony</text>
+
+      <rect x="148" y="0" width="134" height="66" rx="6" fill="#161b22" stroke="#30363d"/>
+      <text x="10" y="22" class="card-title" font-size="12px" transform="translate(148,0)">Media Delivery</text>
+      <text x="10" y="40" class="card-sub" transform="translate(148,0)">Images binding</text>
+      <text x="10" y="54" class="card-sub" transform="translate(148,0)">320/640/1280px</text>
+    </g>
+
+    <g transform="translate(14, 250)">
+      <rect x="0" y="0" width="134" height="66" rx="6" fill="#161b22" stroke="#30363d"/>
+      <text x="10" y="22" class="card-title" font-size="12px">Link Preview</text>
+      <text x="10" y="40" class="card-sub">HTMLRewriter OG</text>
+      <text x="10" y="54" class="card-sub">7-day KV cache</text>
+
+      <rect x="148" y="0" width="134" height="66" rx="6" fill="#161b22" stroke="#30363d"/>
+      <text x="10" y="22" class="card-title" font-size="12px" transform="translate(148,0)">Admin Control</text>
+      <text x="10" y="40" class="card-sub" transform="translate(148,0)">RBAC via user ID</text>
+      <text x="10" y="54" class="card-sub" transform="translate(148,0)">Post moderation</text>
+    </g>
+
+    <g transform="translate(14, 330)">
+      <rect x="0" y="0" width="282" height="76" rx="8" fill="#161b22" stroke="#30363d"/>
+      <text x="12" y="22" class="card-title">Telemetry &amp; Edge Events</text>
+      <text x="12" y="40" class="card-sub">Workers Analytics Engine · request.cf geo insights</text>
+      <text x="12" y="58" class="card-sub">Nightly Cron Trigger (0 0 * * *) D1 rollup aggregation</text>
+    </g>
+  </g>
+
+  <!-- ================= COLUMN 3: STORAGE & STATE ================= -->
+  <g transform="translate(604, 106)">
+    <rect x="0" y="0" width="492" height="420" rx="12" fill="url(#card-grad)" stroke="#30363d" stroke-width="1"/>
+    <text x="16" y="28" class="section-header" fill="#a371f7">Storage, State &amp; Messaging</text>
+
+    <!-- Storage Node 1: D1 SQLite Database -->
+    <g transform="translate(14, 46)">
+      <rect x="0" y="0" width="224" height="110" rx="8" fill="#21262d" stroke="#58a6ff" stroke-width="1"/>
+      <text x="12" y="24" class="card-title">Cloudflare D1 (SQLite)</text>
+      <text x="12" y="42" class="card-sub">Relational schema &amp; SQL migrations</text>
+      <text x="12" y="58" class="card-sub">Members · Posts · Inbound Emails</text>
+      <text x="12" y="74" class="card-sub">Zero-config serverless replication</text>
+      <text x="12" y="94" class="metric">5M reads · 100k writes/day</text>
+    </g>
+
+    <!-- Storage Node 2: Durable Objects (Chat Room) -->
+    <g transform="translate(254, 46)">
+      <rect x="0" y="0" width="224" height="110" rx="8" fill="#21262d" stroke="#3fb950" stroke-width="1"/>
+      <text x="12" y="24" class="card-title">SQLite Durable Objects</text>
+      <text x="12" y="42" class="card-sub">ChatRoom: 1 actor per room</text>
+      <text x="12" y="58" class="card-sub">WebSocket Hibernation API</text>
+      <text x="12" y="74" class="card-sub">Zero GB-s consumed while idle</text>
+      <text x="12" y="94" class="metric">13,000 GB-s/day free</text>
+    </g>
+
+    <!-- Storage Node 3: R2 Object Storage -->
+    <g transform="translate(14, 172)">
+      <rect x="0" y="0" width="224" height="106" rx="8" fill="#21262d" stroke="#f0883e" stroke-width="1"/>
+      <text x="12" y="24" class="card-title">Cloudflare R2 Storage</text>
+      <text x="12" y="42" class="card-sub">S3-compatible object storage</text>
+      <text x="12" y="58" class="card-sub">High-res user photos &amp; screenshots</text>
+      <text x="12" y="74" class="card-sub">100% Zero Egress Bandwidth Fees</text>
+      <text x="12" y="92" class="metric">10 GB-month · 1M ops/mo</text>
+    </g>
+
+    <!-- Storage Node 4: Workers KV -->
+    <g transform="translate(254, 172)">
+      <rect x="0" y="0" width="224" height="106" rx="8" fill="#21262d" stroke="#d29922" stroke-width="1"/>
+      <text x="12" y="24" class="card-title">Cloudflare KV</text>
+      <text x="12" y="42" class="card-sub">Global key-value edge cache</text>
+      <text x="12" y="58" class="card-sub">Link previews metadata cache</text>
+      <text x="12" y="74" class="card-sub">High-speed global read distribution</text>
+      <text x="12" y="92" class="metric">100k reads · 1k writes/day</text>
+    </g>
+
+    <!-- Storage Node 5: Cloudflare Queues -->
+    <g transform="translate(14, 294)">
+      <rect x="0" y="0" width="464" height="112" rx="8" fill="#21262d" stroke="#bc8cff" stroke-width="1"/>
+      <text x="14" y="24" class="card-title">Cloudflare Queues &amp; Dead-Letter Routing</text>
+      <text x="14" y="44" class="card-sub">Decoupled async contact messages · Guaranteed at-least-once delivery</text>
+      <text x="14" y="62" class="card-sub">Automatic retry backoff with DLQ isolation for poison messages</text>
+      <text x="14" y="80" class="card-sub">send_email binding integration delivers verified alerts directly to owner</text>
+      <text x="14" y="98" class="metric">1,000,000 operations/month Free Allowance</text>
+    </g>
+  </g>
+
+  <!-- ================= BOTTOM ROW: WORKFLOWS & WORKERS AI PIPELINE ================= -->
+  <g transform="translate(24, 542)">
+    <rect x="0" y="0" width="1072" height="174" rx="12" fill="url(#card-grad)" stroke="#2ea043" stroke-width="1.2"/>
+    <text x="20" y="26" class="section-header" fill="#3fb950">AI Orchestration &amp; Moderation Pipeline</text>
+
+    <!-- Workflow Step 1 -->
+    <g transform="translate(20, 42)">
+      <rect x="0" y="0" width="234" height="114" rx="8" fill="#21262d" stroke="#30363d"/>
+      <text x="12" y="24" class="card-title">1. Post Trigger</text>
+      <text x="12" y="42" class="card-sub">User submits photo + caption</text>
+      <text x="12" y="60" class="card-sub">Post saved with status='held'</text>
+      <text x="12" y="78" class="card-sub">Cloudflare Workflow instantiated</text>
+      <text x="12" y="98" class="metric">Zero-loss state machine</text>
+    </g>
+
+    <!-- Workflow Step 2 -->
+    <g transform="translate(284, 42)">
+      <rect x="0" y="0" width="244" height="114" rx="8" fill="#21262d" stroke="#f38020"/>
+      <text x="12" y="24" class="card-title">2. Vision &amp; Safety AI</text>
+      <text x="12" y="42" class="card-sub">Workers AI: Llama-3.2-11b-vision</text>
+      <text x="12" y="60" class="card-sub">Workers AI: Llama-Guard-3-8b</text>
+      <text x="12" y="78" class="card-sub">Automatic content safety check</text>
+      <text x="12" y="98" class="metric">10k Neurons/day Budget</text>
+    </g>
+
+    <!-- Workflow Step 3 -->
+    <g transform="translate(558, 42)">
+      <rect x="0" y="0" width="244" height="114" rx="8" fill="#21262d" stroke="#bc8cff"/>
+      <text x="12" y="24" class="card-title">3. Vector Embeddings</text>
+      <text x="12" y="42" class="card-sub">Workers AI: bge-small-en-v1.5</text>
+      <text x="12" y="60" class="card-sub">Generates 384-dim semantic vector</text>
+      <text x="12" y="78" class="card-sub">Indexed into Cloudflare Vectorize</text>
+      <text x="12" y="98" class="metric">Cosine Metric Search</text>
+    </g>
+
+    <!-- Workflow Step 4 -->
+    <g transform="translate(832, 42)">
+      <rect x="0" y="0" width="220" height="114" rx="8" fill="#21262d" stroke="#2ea043"/>
+      <text x="12" y="24" class="card-title">4. Publish &amp; Index</text>
+      <text x="12" y="42" class="card-sub">Post updated to status='public'</text>
+      <text x="12" y="60" class="card-sub">Immediately discoverable via</text>
+      <text x="12" y="78" class="card-sub">Vectorize semantic search</text>
+      <text x="12" y="98" class="metric">Instant Global Sync</text>
+    </g>
+
+    <!-- Arrows between workflow steps -->
+    <line x1="256" y1="99" x2="280" y2="99" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrow-blue)"/>
+    <line x1="530" y1="99" x2="554" y2="99" stroke="#f38020" stroke-width="2" marker-end="url(#arrow-orange)"/>
+    <line x1="804" y1="99" x2="828" y2="99" stroke="#bc8cff" stroke-width="2" marker-end="url(#arrow-purple)"/>
+  </g>
+
+  <!-- Connectors between Main Columns -->
+  <!-- Client to Hono Router -->
+  <line x1="254" y1="180" x2="270" y2="180" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrow-blue)"/>
+  <line x1="254" y1="270" x2="270" y2="210" stroke="#3fb950" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrow-green)"/>
+
+  <!-- Hono Router to Storage -->
+  <line x1="584" y1="180" x2="600" y2="180" stroke="#f38020" stroke-width="2" marker-end="url(#arrow-orange)"/>
+  <line x1="584" y1="290" x2="600" y2="290" stroke="#f0883e" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrow-orange)"/>
+
+  <!-- Hono to Workflow Down -->
+  <line x1="430" y1="526" x2="430" y2="540" stroke="#2ea043" stroke-width="2" marker-end="url(#arrow-green)"/>
+</svg>

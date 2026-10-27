@@ -1,0 +1,19 @@
+# AI tooling & session artifacts
+.claude/
+.grill/
+.cursor/
+.gemini/
+.agents/
+CLAUDE.md
+
+# Dependencies & Build artifacts
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+*.log
+.DS_Store
+coverage/
